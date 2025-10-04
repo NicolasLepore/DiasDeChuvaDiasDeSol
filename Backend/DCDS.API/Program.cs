@@ -86,6 +86,29 @@ namespace DCDS.API
                 identityDb.Database.Migrate();
             }
 
+            using(var scope = app.Services.CreateScope())
+            {
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+                string[] names = 
+                    new string[5] { "Antonio", "Gustavo", "Henri", "Nicolas", "Rafael" };
+
+                foreach(var name in names)
+                {
+                    var user = new User()
+                    {
+                        UserName = name,
+                        Email = $"{name}" + "@gmail.com"
+                    };
+
+                    var result = userManager.CreateAsync(user, "123Senha!").Result;
+
+                    if(!result.Succeeded)
+                    {
+                        Console.WriteLine($"Erro ao criar usuario {user.UserName}");
+                    }
+                }
+            }
+
             app.Run();
         }
     }
