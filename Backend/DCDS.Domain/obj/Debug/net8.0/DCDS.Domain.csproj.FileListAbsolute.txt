@@ -1,0 +1,12 @@
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\bin\Debug\net8.0\DCDS.Domain.deps.json
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\bin\Debug\net8.0\DCDS.Domain.dll
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\bin\Debug\net8.0\DCDS.Domain.pdb
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\DCDS.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\DCDS.Domain.AssemblyInfoInputs.cache
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\DCDS.Domain.AssemblyInfo.cs
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\DCDS.Domain.csproj.CoreCompileInputs.cache
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\DCDS.Domain.sourcelink.json
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\DCDS.Domain.dll
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\refint\DCDS.Domain.dll
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\DCDS.Domain.pdb
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Domain\obj\Debug\net8.0\ref\DCDS.Domain.dll
