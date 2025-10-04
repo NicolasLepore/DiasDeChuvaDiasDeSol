@@ -1,0 +1,12 @@
+[
+  {
+    "ContainingType": "DCDS.API.Controllers.TestController",
+    "Method": "GetTest",
+    "RelativePath": "api/v1/test",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]
