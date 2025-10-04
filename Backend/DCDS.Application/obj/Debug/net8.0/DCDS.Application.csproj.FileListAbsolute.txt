@@ -1,0 +1,16 @@
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.csproj.AssemblyReference.cache
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.AssemblyInfoInputs.cache
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.AssemblyInfo.cs
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.csproj.CoreCompileInputs.cache
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.sourcelink.json
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\bin\Debug\net8.0\DCDS.Application.deps.json
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\bin\Debug\net8.0\DCDS.Application.dll
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\bin\Debug\net8.0\DCDS.Application.pdb
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\bin\Debug\net8.0\DCDS.Domain.dll
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\bin\Debug\net8.0\DCDS.Domain.pdb
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.App.ED2997EF.Up2Date
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.dll
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\refint\DCDS.Application.dll
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\DCDS.Application.pdb
+C:\Users\nigam\source\repos\DCDS\Backend\DCDS.Application\obj\Debug\net8.0\ref\DCDS.Application.dll
