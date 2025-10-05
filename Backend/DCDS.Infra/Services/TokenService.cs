@@ -14,8 +14,7 @@ namespace DCDS.Infra.Services
             Claim[] claims = new Claim[]
             {
                 new Claim("id", dto.Id!),
-                new Claim(ClaimTypes.Name, dto.UserName!),
-                new Claim(ClaimTypes.DateOfBirth, dto.Birthday!)
+                new Claim(ClaimTypes.Name, dto.UserName!)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("xOP87MnBNKAppLHJam7333op19xJfwWq"));

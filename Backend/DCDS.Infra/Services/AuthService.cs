@@ -49,7 +49,6 @@ namespace DCDS.Infra.Services
             {
                 UserName = user.UserName,
                 Id = user.Id,
-                Birthday = user.Birthday.ToString()
             };
 
             var token = _tokenService.CreateToken(userDetails);

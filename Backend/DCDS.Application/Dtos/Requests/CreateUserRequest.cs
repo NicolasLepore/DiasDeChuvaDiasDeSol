@@ -22,8 +22,5 @@ namespace DCDS.Application.Dtos.Requests
         [MaxLength(16)]
         [Compare("Password")]
         public string? RePassword { get; set; }
-
-        [Required]
-        public DateTime Birthday { get; set; }
     }
 }
