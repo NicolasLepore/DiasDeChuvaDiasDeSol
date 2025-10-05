@@ -13,6 +13,10 @@ export default function Header() {
     navigate("/");
   };
 
+  const hundleCalendar = () => {
+    navigate("/calendar");
+  };
+
   const hundleLogin = () => {
     navigate("/login");
   };
@@ -28,7 +32,7 @@ export default function Header() {
             Home
           </button>
           <button className="hover:text-amber-100">Clima</button>
-          <button className="hover:text-amber-100">Calendário</button>
+          <button onClick={hundleCalendar} className="hover:text-amber-100">Calendário</button>
           <button onClick={hundleLogin} className="hover:text-amber-100">
             Login
           </button>
