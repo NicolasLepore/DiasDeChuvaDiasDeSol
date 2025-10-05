@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DCDS.Application.Dtos;
 using DCDS.Application.Dtos.Requests;
 using DCDS.Application.Interfaces;
 using DCDS.Domain.Exceptions;
@@ -15,14 +16,16 @@ namespace DCDS.Infra.Services
     public class AuthService : IAuthService
     {
         private readonly IMapper _mapper;
+        private readonly ITokenService _tokenService;
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
 
-        public AuthService(IMapper mapper, UserManager<User> userManager, SignInManager<User> signInManager)
+        public AuthService(IMapper mapper, UserManager<User> userManager, SignInManager<User> signInManager, ITokenService tokenService)
         {
             _mapper = mapper;
             _userManager = userManager;
             _signInManager = signInManager;
+            _tokenService = tokenService;
         }
 
         public void Logout()
@@ -30,30 +33,37 @@ namespace DCDS.Infra.Services
             throw new NotImplementedException();
         }
 
-        public void SignInAsync()
+        public async Task<string> SignInAsync(SignInUserRequest dto)
         {
-            throw new NotImplementedException();
+            var result = await _signInManager.PasswordSignInAsync(dto.UserName!, dto.Password!, false, false);
+
+            if (!result.Succeeded) throw new AuthException("Failed to signIn, invalid credentials!");
+
+            var user =
+                _signInManager
+                .UserManager
+                .Users
+                .FirstOrDefault(user => user.UserName == dto.UserName);
+
+            var userDetails = new UserDetail()
+            {
+                UserName = user.UserName,
+                Id = user.Id,
+                Birthday = user.Birthday.ToString()
+            };
+
+            var token = _tokenService.CreateToken(userDetails);
+
+            return token;
         }
 
-        public async Task<bool> SignUpAsync(CreateUserRequest dto)
+        public async Task<IdentityResult> SignUpAsync(CreateUserRequest dto)
         {
             var user = _mapper.Map<User>(dto);
-            Console.WriteLine(user.UserName);
+
             var result = await _userManager.CreateAsync(user, dto.Password!);
 
-            if (!result.Succeeded)
-            {
-                var errorsListMessage = "";
-                foreach (var error in result.Errors)
-                {
-                    errorsListMessage += error.Description + "\n";
-                }
-                Console.WriteLine("LISTA ERROS: " + errorsListMessage);
-                throw new AuthException("Failed to register user!", errorsListMessage);
-
-            }
-
-            return result.Succeeded;
+            return result;
         }
     }
 }

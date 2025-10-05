@@ -1,4 +1,5 @@
 ﻿using DCDS.Application.Dtos.Requests;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +10,8 @@ namespace DCDS.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<bool> SignUpAsync(CreateUserRequest dto);
-        void SignInAsync();
+        Task<IdentityResult> SignUpAsync(CreateUserRequest dto);
+        Task<string> SignInAsync(SignInUserRequest dto);
         void Logout();
     }
 }

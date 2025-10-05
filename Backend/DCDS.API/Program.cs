@@ -6,9 +6,12 @@ using DCDS.Infra.Data.Identity;
 using DCDS.Infra.Models;
 using DCDS.Infra.Repositories;
 using DCDS.Infra.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace DCDS.API
 {
@@ -31,6 +34,7 @@ namespace DCDS.API
             builder.Services.AddScoped<UserUseCase>();
 
             builder.Services.AddScoped<IRepository<User>, UserRepository>();
+            builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
 
             string appConnString = builder.Configuration.GetConnectionString("AppConnectionString")!;
@@ -61,6 +65,25 @@ namespace DCDS.API
                 opt.Password.RequireUppercase = true;
             });
 
+            builder.Services.AddAuthentication(opt =>
+            {
+                opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                opt.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+            }).AddJwtBearer(opt =>
+            {
+                opt.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters() 
+                { 
+                    ValidateIssuer = false,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("xOP87MnBNKAppLHJam7333op19xJfwWq")),
+                    ValidateAudience = false,
+                    ValidateIssuerSigningKey = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
+            builder.Services.AddCors();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -72,6 +95,14 @@ namespace DCDS.API
 
             app.UseHttpsRedirection();
 
+            app.UseCors(c =>
+            {
+                c.AllowAnyHeader();
+                c.AllowAnyMethod();
+                c.AllowAnyOrigin();
+            });
+
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
