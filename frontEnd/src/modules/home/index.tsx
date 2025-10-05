@@ -5,13 +5,17 @@ import { useNavigate } from "react-router-dom";
 const Home = () => {
   const navigate = useNavigate();
 
+  const hundleClima = () =>{
+    navigate("/clima")
+  }
+
   const hundleLogin = () => {
     navigate("/login");
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <main className="w-screen flex-col ">
+    
+      <main className="w-screen flex flex-col p-7 bg-gradient-to-t from-[#F8FBFF] via-[#FFEDDB] to-[#FFDFD2] ">
         <div className="text-center font-bold w-full flex flex-col gap-10  ">
           <div className="text-4xl text-black ">
             Planeje Seu dia com o <span className="text-blue-600">clima</span> a
@@ -22,16 +26,18 @@ const Home = () => {
           </div>
         </div>
         <div className="flex justify-around p-10">
-          <button className="flex items-center justify-center gap-2 w-full max-w-xs py-3 bg-[#F5FAF9] rounded-full shadow-md hover:bg-black">
+          <button className="flex items-center justify-center gap-2 w-full max-w-xs py-3 bg-[#F5FAF9] rounded-full shadow-md text-black hover:bg-black hover:text-white ">
             <Calendar className="w-6 h-6 text-red-500" />
-            <span className="text-lg font-medium text-black">
+            <span className="text-lg font-medium ">
               Agendar evento
             </span>
           </button>
 
-          <button className="flex items-center justify-center gap-2 w-full max-w-xs py-3 bg-black rounded-full shadow-md hover:bg-white">
+          <button
+          onClick={hundleClima}
+          className="flex items-center justify-center gap-2 w-full max-w-xs py-3 bg-black rounded-full shadow-md text-white hover:bg-white hover:text-black">
             <Calendar className="w-6 h-6 text-red-500" />
-            <span className="text-lg font-medium text-white">Clima atual</span>
+            <span className="text-lg font-medium  ">Clima atual</span>
           </button>
         </div>
         <div className="grid gap-12 p-8">
@@ -77,7 +83,7 @@ const Home = () => {
           </div>
         </div>
       </main>
-    </div>
+    
   );
 };
 

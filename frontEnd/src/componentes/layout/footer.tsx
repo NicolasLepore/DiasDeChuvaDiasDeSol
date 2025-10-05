@@ -6,7 +6,6 @@ const Footer = () => {
           <h3 className="font-semibold mb-3">Desenvolvedores</h3>
           <ul className="space-y-1 text-gray-300">
             <li>Antonio Paina</li>
-            <li>Anne Souza</li>
             <li>Gustavo Pinho</li>
             <li>Henri Porto</li>
             <li>Nicolas Leparo</li>
@@ -18,7 +17,6 @@ const Footer = () => {
           <h3 className="font-semibold mb-3">LinkedIn</h3>
           <ul className="space-y-1 text-gray-300">
             <li>Antonio Paina</li>
-            <li>Anne Souza</li>
             <li>Gustavo Pinho</li>
             <li>Henri Porto</li>
             <li>Nicolas Leparo</li>
@@ -30,7 +28,6 @@ const Footer = () => {
           <h3 className="font-semibold mb-3">Instagram</h3>
           <ul className="space-y-1 text-gray-300">
             <li>Antonio Paina</li>
-            <li>Anne Souza</li>
             <li>Gustavo Pinho</li>
             <li>Henri Porto</li>
             <li>Nicolas Leparo</li>

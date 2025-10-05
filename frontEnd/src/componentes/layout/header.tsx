@@ -16,7 +16,9 @@ export default function Header() {
   const hundleLogin = () => {
     navigate("/login");
   };
-
+  const hundleClima = () => {
+    navigate("/clima");
+  };
   return (
     <>
       <header className="bg-black text-white flex items-center justify-between px-4 py-3 md:px-8 lg:px-12 relative z-20">
@@ -27,8 +29,11 @@ export default function Header() {
           <button onClick={hundleHome} className="hover:text-amber-100">
             Home
           </button>
-          <button className="hover:text-amber-100">Clima</button>
-          <button className="hover:text-amber-100">Calendário</button>
+          <button className="hover:text-amber-100">Calendario</button>
+          <button onClick={hundleClima} className="hover:text-amber-100">
+            {" "}
+            Clima
+          </button>
           <button onClick={hundleLogin} className="hover:text-amber-100">
             Login
           </button>
@@ -41,7 +46,7 @@ export default function Header() {
       </header>
 
       {/* Sidebar (mobile) */}
-      <div
+      {/* <div
         className={`fixed top-0 right-0 h-full w-2/3 bg-black text-white flex flex-col items-center justify-center gap-6 text-xl transition-transform duration-300 z-10 ${
           menuOpen ? "translate-x-0" : "translate-x-full"
         }`}
@@ -56,9 +61,65 @@ export default function Header() {
         <button onClick={hundleHome} className="hover:text-amber-100">
           Home
         </button>
-        <button className="hover:text-amber-100">Clima</button>
+        <button onClick={hundleClima} className="hover:text-amber-100">Clima</button>
         <button className="hover:text-amber-100">Calendário</button>
         <button onClick={hundleLogin} className="hover:text-amber-100">
+          Login
+        </button>
+      </div> */}
+      <div
+        className={`fixed top-0 right-0 h-[80%] w-2/3 sm:w-1/4 
+  bg-gradient-to-b from-[#FFF5EE] via-[#FFE1CC] to-[#FFD8C2]
+  text-gray-800 shadow-xl flex flex-col items-center justify-center gap-8 text-xl font-semibold
+  transition-transform duration-300 ease-in-out rounded-l-xl backdrop-blur-md z-50
+  ${menuOpen ? "translate-x-0" : "translate-x-full"}`}
+      >
+        {/* Botão de Fechar */}
+        <button
+          onClick={handleMenuToggle}
+          className="absolute top-4 right-5 text-3xl text-gray-700 hover:rotate-90 transition-transform duration-300"
+        >
+          ✕
+        </button>
+
+        {/* Links */}
+        <button
+          onClick={() => {
+            hundleHome();
+            handleMenuToggle();
+          }}
+          className="w-3/4 pb-2 border-b border-gray-300 hover:text-amber-600 transition duration-300"
+        >
+          Home
+        </button>
+
+        <button
+          onClick={() => {
+            hundleClima();
+            handleMenuToggle();
+          }}
+          className="w-3/4 pb-2 border-b border-gray-300 hover:text-amber-600 transition duration-300"
+        >
+          Clima
+        </button>
+
+        <button
+          onClick={() => {
+            // aqui você adiciona a função correspondente se tiver
+            handleMenuToggle();
+          }}
+          className="w-3/4 pb-2 border-b border-gray-300 hover:text-amber-600 transition duration-300"
+        >
+          Calendário
+        </button>
+
+        <button
+          onClick={() => {
+            hundleLogin();
+            handleMenuToggle();
+          }}
+          className="w-3/4 pb-2 border-b border-gray-300 hover:text-amber-600 transition duration-300"
+        >
           Login
         </button>
       </div>
