@@ -242,7 +242,7 @@ const Clima = () => {
       <div className="bg-white rounded-xl shadow-md p-6  w-full overflow-x-auto">
         <div className="grid grid-cols-7 text-center gap-4 min-w-[600px]">
           {weekForecast.map(
-            ({ day, max, min, description, rainChance, icon }, idx) => (
+            ({ max, min, description, rainChance, icon }, idx) => (
               <div
                 key={idx}
                 className="flex flex-col items-center text-sm text-gray-800"
