@@ -4,5 +4,4 @@ export interface Person {
   email: string
   password: string
   rePassword: string
-  birthday: string
 }

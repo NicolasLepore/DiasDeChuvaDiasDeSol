@@ -17,7 +17,6 @@ const Cadastro: React.FC = () => {
     email: "",
     password: "",
     rePassword: "",
-    birthday: ""
   };
 
   const validationSchema = Yup.object({
@@ -34,7 +33,7 @@ const Cadastro: React.FC = () => {
         "A senha deve conter ao menos um símbolo (! @ # % &)."
       )
       .required("A senha é obrigatória."),
-    confirmPassword: Yup.string()
+    rePassword: Yup.string()
       .oneOf([Yup.ref("password")], "As senhas não coincidem.")
       .required("Confirme sua senha."),
   });
@@ -43,14 +42,24 @@ const Cadastro: React.FC = () => {
     navigate("/login"); // ajuste a rota conforme seu app
   };
 
-  const handleSubmit = async (form: Person) => {
-  
-    const newPerson = await createUser(form);
-    
-     
+  const handleSubmit = async (values: Person) => {
+    try {
+      const response = await createUser({
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        rePassword: values.rePassword, // ⚠ mapear rePassword → rePassword
+      });
+      console.log(response);
+      alert("Cadastro realizado com sucesso!");
+    } catch (err: any) {
+      if (err.response) {
+        console.log("Erro da API:", err.response.data);
+      } else {
+        console.log("Erro na requisição:", err.message);
+      }
     }
-  ;
-
+  };
   return (
     <div className="flex w-full h-screen items-center justify-center bg-gradient-to-t from-[#AED9FF] via-[#cff3f8] to-[#ddebff]">
       <div className="bg-white border-[0.1px] rounded-[10px] p-8 border-gray-400 flex">
@@ -136,7 +145,7 @@ const Cadastro: React.FC = () => {
               <div>
                 <label
                   className="font-semibold p-4 text-sm"
-                  htmlFor="confirmPassword"
+                  htmlFor="rePassword"
                 >
                   Confirmar senha
                 </label>
@@ -144,14 +153,14 @@ const Cadastro: React.FC = () => {
                   <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                   <Field
                     type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
+                    id="rePassword"
+                    name="rePassword"
                     placeholder="Digite sua senha novamente"
                     className="w-full h-5 bg-white p-5 pl-9 rounded-3xl border-[1px] border-gray-300"
                   />
                 </div>
                 <ErrorMessage
-                  name="confirmPassword"
+                  name="rePassword"
                   component="div"
                   className="text-red-500 text-xs mt-1 pl-5"
                 />
