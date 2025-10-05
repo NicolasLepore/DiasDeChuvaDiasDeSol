@@ -10,5 +10,7 @@ namespace DCDS.Application.Dtos.Responses
     {
         public bool Success { get; set; }
         public int StatusCode { get; set; }
+
+        public string? Token { get; set; }
     }
 }

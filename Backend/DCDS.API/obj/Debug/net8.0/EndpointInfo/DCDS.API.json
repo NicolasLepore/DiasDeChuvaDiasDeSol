@@ -48,11 +48,30 @@
         }
       }
     },
-    "/api/v1/auth/getusers": {
-      "get": {
+    "/api/v1/auth/signin": {
+      "post": {
         "tags": [
           "User"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInUserRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInUserRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInUserRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -60,8 +79,8 @@
         }
       }
     },
-    "/api/v1/auth/signin": {
-      "post": {
+    "/api/v1/auth/getusers": {
+      "get": {
         "tags": [
           "User"
         ],
@@ -110,6 +129,24 @@
           "birthday": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SignInUserRequest": {
+        "required": [
+          "password",
+          "userName"
+        ],
+        "type": "object",
+        "properties": {
+          "userName": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false

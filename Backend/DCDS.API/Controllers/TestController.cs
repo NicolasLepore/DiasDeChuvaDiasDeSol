@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DCDS.API.Controllers
 {
@@ -12,9 +13,10 @@ namespace DCDS.API.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public ActionResult GetTest()
         {
-            return Ok(new { Message = "Hello World", Status = StatusCodes.Status200OK });
+            return Ok(new { Message = "Endpoint protegido acessado!", Status = StatusCodes.Status200OK });
         }
     }
 }

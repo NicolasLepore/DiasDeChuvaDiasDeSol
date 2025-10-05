@@ -38,21 +38,20 @@ namespace DCDS.Application.UseCases
 
             return new DefaultResponseData()
             {
-                Success = false,
+                Success = true,
                 StatusCode = 200
             };
         }
 
         public async Task<DefaultResponseData> LoginAsync(SignInUserRequest dto)
         {
-            var result = await _auth.SignInAsync(dto);
-
-            if(!result.Succeeded) throw new AuthException("Failed to signIn, invalid credentials!");
+            string token = await _auth.SignInAsync(dto);
 
             return new DefaultResponseData()
             {
-                Success = false,
-                StatusCode = 200
+                Success = true,
+                StatusCode = 200,
+                Token = token
             };
         }
     }

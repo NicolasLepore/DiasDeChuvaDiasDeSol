@@ -16,7 +16,13 @@
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "DCDS.Application.Dtos.Requests.SignInUserRequest",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
