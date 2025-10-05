@@ -13,6 +13,10 @@ export default function Header() {
     navigate("/");
   };
 
+  const hundleCalendar = () => {
+    navigate("/calendar");
+  };
+
   const hundleLogin = () => {
     navigate("/login");
   };
@@ -29,11 +33,12 @@ export default function Header() {
           <button onClick={hundleHome} className="hover:text-amber-100">
             Home
           </button>
-          <button className="hover:text-amber-100">Calendario</button>
-          <button onClick={hundleClima} className="hover:text-amber-100">
-            {" "}
-            Clima
+
+          <button className="hover:text-amber-100">Clima</button>
+          <button onClick={hundleCalendar} className="hover:text-amber-100">
+            Calendário
           </button>
+
           <button onClick={hundleLogin} className="hover:text-amber-100">
             Login
           </button>
@@ -69,10 +74,10 @@ export default function Header() {
       </div> */}
       <div
         className={`fixed top-0 right-0 h-[80%] w-2/3 sm:w-1/4 
-  bg-gradient-to-b from-[#FFF5EE] via-[#FFE1CC] to-[#FFD8C2]
-  text-gray-800 shadow-xl flex flex-col items-center justify-center gap-8 text-xl font-semibold
-  transition-transform duration-300 ease-in-out rounded-l-xl backdrop-blur-md z-50
-  ${menuOpen ? "translate-x-0" : "translate-x-full"}`}
+          bg-gradient-to-b from-[#FFF5EE] via-[#FFE1CC] to-[#FFD8C2]
+          text-gray-800 shadow-xl flex flex-col items-center justify-center gap-8 text-xl font-semibold
+          transition-transform duration-300 ease-in-out rounded-l-xl backdrop-blur-md z-50
+          ${menuOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Botão de Fechar */}
         <button
