@@ -9,6 +9,5 @@ namespace DCDS.Infra.Models
             
         }
 
-        public DateTime Birthday { get; set; }
     }
 }
