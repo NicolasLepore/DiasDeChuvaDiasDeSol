@@ -1035,7 +1035,8 @@
       "System.Threading.Channels/7.0.0": {},
       "DCDS.Application/1.0.0": {
         "dependencies": {
-          "DCDS.Domain": "1.0.0"
+          "DCDS.Domain": "1.0.0",
+          "Microsoft.AspNetCore.Identity": "2.3.1"
         },
         "runtime": {
           "DCDS.Application.dll": {
