@@ -1,11 +1,11 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./modules/home";
-import Login from "./modules/login";
 import Layout from "./componentes/layout";
 import Login from "./modules/login";
 import Cadastro from "./modules/cadastro";
 import Clima from "./modules/Clima";
 import Usuarios from "./modules/usuarios";
+import Calendar from "./modules/calendar";
 
 function App() {
   return (

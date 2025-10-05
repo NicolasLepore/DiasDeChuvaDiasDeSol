@@ -29,12 +29,15 @@ export default function Header() {
         <VscAccount className="text-2xl md:text-3xl" />
 
         {/* Menu normal (desktop/tablet) */}
-        <ul className="hidden md:flex justify-around md:w-[60%] lg:w-[40%] text-sm md:text-base lg:text-lg">
+        <div className="hidden md:flex justify-around md:w-[60%] lg:w-[40%] text-sm md:text-base lg:text-lg">
           <button onClick={hundleHome} className="hover:text-amber-100">
             Home
           </button>
 
-          <button className="hover:text-amber-100">Clima</button>
+          <button onClick={hundleClima} className="hover:text-amber-100">
+            Clima
+          </button>
+
           <button onClick={hundleCalendar} className="hover:text-amber-100">
             Calendário
           </button>
@@ -42,7 +45,7 @@ export default function Header() {
           <button onClick={hundleLogin} className="hover:text-amber-100">
             Login
           </button>
-        </ul>
+        </div>
 
         {/* Ícone de menu (mobile) */}
         <button onClick={handleMenuToggle} className="md:hidden text-3xl">
