@@ -11,7 +11,7 @@ namespace DCDS.Application.Interfaces
     public interface IAuthService
     {
         Task<IdentityResult> SignUpAsync(CreateUserRequest dto);
-        Task<SignInResult> SignInAsync(SignInUserRequest dto);
+        Task<string> SignInAsync(SignInUserRequest dto);
         void Logout();
     }
 }

@@ -37,7 +37,7 @@ namespace DCDS.API.Controllers
 
             if(!response.Success) return BadRequest("An unexpected error occurred");
 
-            return Ok();
+            return Ok(response);
         }
 
         [HttpGet("getusers")]
