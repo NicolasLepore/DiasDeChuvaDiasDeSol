@@ -292,7 +292,9 @@ def indice_atividade(temp_c: float|None, rain_mm_day: float|None, wind_kmh: floa
 
 def process_gldas_to_daily(files, lat, lon) -> pd.DataFrame:
     K2C       = lambda x: x - 273.15
+    K2F = lambda x: (x - 273.15) * 1.8 + 32
     MS2KMH    = lambda x: x * 3.6
+    MS2MPH = lambda x: x * 2.237
     KGm2S2MMH = lambda x: x * 3600.0  # kg m-2 s-1 -> mm/h
     Pa2hPa    = lambda x: x / 100.0
 
@@ -300,8 +302,10 @@ def process_gldas_to_daily(files, lat, lon) -> pd.DataFrame:
     ds = subset_point(ds, lat, lon).load()
 
     out = xr.Dataset()
+    if "Tair_f_inst"  in ds: out["temp_f"]       = K2F(ds["Tair_f_inst"])
     if "Tair_f_inst"  in ds: out["temp_c"]       = K2C(ds["Tair_f_inst"])
     if "Wind_f_inst"  in ds: out["wind_kmh"]     = MS2KMH(ds["Wind_f_inst"])
+    if "Wind_f_inst"  in ds: out["wind_mph"]     = MS2MPH(ds["Wind_f_inst"])
     if "Rainf_f_tavg" in ds: out["rain_mm"]      = KGm2S2MMH(ds["Rainf_f_tavg"]) * 3.0  # passo 3h → mm por passo
     if "Psurf_f_inst" in ds: out["press_hpa"]    = Pa2hPa(ds["Psurf_f_inst"])
     if "SWdown_f_tavg" in ds: out["solar_wm2"]   = ds["SWdown_f_tavg"]  # já média no passo
@@ -320,12 +324,12 @@ def process_gldas_to_daily(files, lat, lon) -> pd.DataFrame:
 
     # Agregado diário
     daily = xr.Dataset()
-    if "temp_c" in out:
-        daily["temp_mean_c"] = out["temp_c"].resample(time="1D").mean()
-        daily["temp_max_c"]  = out["temp_c"].resample(time="1D").max()
-        daily["temp_min_c"]  = out["temp_c"].resample(time="1D").min()
-    if "wind_kmh" in out:
-        daily["wind_mean_kmh"] = out["wind_kmh"].resample(time="1D").mean()
+    if "temp_f" in out:
+        daily["temp_mean_f"] = out["temp_f"].resample(time="1D").mean()
+        daily["temp_max_f"]  = out["temp_f"].resample(time="1D").max()
+        daily["temp_min_f"]  = out["temp_f"].resample(time="1D").min()
+    if "wind_mph" in out:
+        daily["wind_mean_mph"] = out["wind_mph"].resample(time="1D").mean()
     if "rain_mm" in out:
         daily["rain_mm_day"] = out["rain_mm"].resample(time="1D").sum()
     if "press_hpa" in out:
@@ -369,10 +373,11 @@ def climatologia(df_daily: pd.DataFrame, target_date: str,
     out = {
         "ok": True,
         "amostra": int(base.shape[0]),
-        "temp_mean_c":   stats("temp_mean_c"),
-        "temp_min_c":    stats("temp_min_c"),
-        "temp_max_c":    stats("temp_max_c"),
-        "wind_mean_kmh": stats("wind_mean_kmh"),
+        "temp_mean_c": stats("temp_mean_c"),
+        "temp_mean_f":   stats("temp_mean_f"),
+        "temp_min_f":    stats("temp_min_f"),
+        "temp_max_f":    stats("temp_max_f"),
+        "wind_mean_mph": stats("wind_mean_mph"),
         "rain_mm_day":   stats("rain_mm_day"),
         "rh_mean_pct":   stats("rh_mean_pct"),
         "pressure_mean_hpa": stats("pressure_mean_hpa"),
@@ -380,10 +385,11 @@ def climatologia(df_daily: pd.DataFrame, target_date: str,
     }
     pm = (out.get("rain_mm_day") or {}).get("mean", 0.0)
     tm = (out.get("temp_mean_c") or {}).get("mean", float("nan"))
+    tmf = (out.get("temp_mean_f") or {}).get("mean", float("nan"))
     chuva_txt = "tende a ser seco" if pm < 1 else ("há chance de chuva" if pm < 20 else "chuva forte é comum")
     if not np.isnan(tm):
         temp_txt  = "bem quente" if tm >= 30 else ("quente" if tm >= 25 else ("frio" if tm <= 15 else "ameno"))
-        out["resumo"] = f"Histórico (2020–2024 ±{janela}d): {chuva_txt}; média {tm:.1f}°C ({temp_txt})."
+        out["resumo"] = f"Histórico (2020–2024 ±{janela}d): {chuva_txt}; média {tmf:.1f}°F ({temp_txt})."
     else:
         out["resumo"] = f"Histórico (2020–2024 ±{janela}d): {chuva_txt}."
     return out
@@ -432,10 +438,10 @@ def hist_fallback_era5_openmeteo(lat: float, lon: float, data_evento: str, janel
         "rain_mm_day": stats(base["precipitation_sum"]),
         "wind_mean_kmh": stats(base["wind_speed_10m_max"]),
     }
-    pm = out["rain_mm_day"]["mean"]; tm = out["temp_mean_c"]["mean"]
+    pm = out["rain_mm_day"]["mean"]; tm = out["temp_mean_c"]["mean"]; tf = (tm * 9/5) + 32
     chuva_txt = "tende a ser seco" if pm < 1 else ("há chance de chuva" if pm < 20 else "chuva forte é comum")
     temp_txt  = "bem quente" if tm >= 30 else ("quente" if tm >= 25 else ("frio" if tm <= 15 else "ameno"))
-    out["resumo"] = f"Histórico (ERA5, 2020–2024 ±{janela}d): {chuva_txt}; média {tm:.1f}°C ({temp_txt})."
+    out["resumo"] = f"Histórico (ERA5, 2020–2024 ±{janela}d): {chuva_txt}; média {tf:.1f}°F ({temp_txt})."
     return out
 
 # ===================== Previsão 7 dias (Google/Open-Meteo) =====================
@@ -467,7 +473,9 @@ def forecast_google(lat: float, lon: float, days:int=7, timezone="auto") -> Dict
             daily.append({
                 "date": d.get("date") or d.get("time"),
                 "tmax": d.get("temperatureMax"),
+                "tmax_f": (d.get("temperatureMax") * 9/5 + 32) if d.get("temperatureMax") is not None else None,
                 "tmin": d.get("temperatureMin"),
+                "tmin_f": (d.get("temperatureMin") * 9/5 + 32) if d.get("temperatureMin") is not None else None,
                 "humidity_mean": d.get("humidityAvg"),
                 "visibility_km": d.get("visibilityAvg"),
                 "precip_mm": d.get("precipitationAmount"),
@@ -498,7 +506,9 @@ def forecast_openmeteo(lat: float, lon: float, days:int=7, timezone="auto") -> D
     df_d = pd.DataFrame({
         "date": pd.to_datetime(d_d["time"]).date,
         "tmax": d_d.get("temperature_2m_max"),
+        "tmax_f": [(t * 9/5 + 32) if t is not None else None for t in d_d.get("temperature_2m_max", [])],
         "tmin": d_d.get("temperature_2m_min"),
+        "tmin_f": [(t * 9/5 + 32) if t is not None else None for t in d_d.get("temperature_2m_min", [])],
         "precip_mm": d_d.get("precipitation_sum"),
         "precip_prob": d_d.get("precipitation_probability_mean"),
         "wind_max": d_d.get("wind_speed_10m_max"),
