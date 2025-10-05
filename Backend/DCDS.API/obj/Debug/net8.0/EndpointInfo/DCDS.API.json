@@ -96,7 +96,6 @@
     "schemas": {
       "CreateUserRequest": {
         "required": [
-          "birthday",
           "email",
           "password",
           "rePassword",
@@ -125,10 +124,6 @@
             "maxLength": 16,
             "minLength": 1,
             "type": "string"
-          },
-          "birthday": {
-            "type": "string",
-            "format": "date-time"
           }
         },
         "additionalProperties": false
