@@ -10,7 +10,7 @@ Pipeline:
  - Calcula climatologia (GLDAS). Se faltar dado, fallback ERA5 (Open-Meteo archive)
  - Previsão 7 dias: Google Weather (se GOOGLE_WEATHER_API_KEY) → fallback Open-Meteo (com umidade, visibilidade, sensação)
  - Gera recomendação determinística e, opcionalmente, recomendação contextual (IA local via Ollama)
- - Entrega payload completo OU JSON "slim" para o front
+ - Entrega payload completo OU JSONs “amigáveis” para o front (card, blocos, etc.)
 
 Requisitos:
  pip install python-dotenv xarray netCDF4 pandas numpy requests earthaccess
@@ -39,11 +39,11 @@ except ImportError:
 
 import sys
 try:
+    # evita erros de decodificação no Windows (cp1252)
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 except Exception:
     pass
-
 
 load_dotenv()
 
@@ -63,9 +63,16 @@ EVENT_TYPE      = os.getenv("EVENT_TYPE", "").strip()
 PERSON_NAME     = os.getenv("PERSON_NAME", "").strip()
 PET_NAME        = os.getenv("PET_NAME", "").strip()
 
-# ---- Saídas ----
-COMPACT_JSON    = os.getenv("COMPACT_JSON", "false").lower() in ("1","true","yes","y")  # só {"ok":..,"motivo":..}
-FRONT_SLIM      = os.getenv("FRONT_SLIM", "false").lower() in ("1","true","yes","y")    # JSON amigável ao front
+# ---- Saídas / Flags globais (também lidas no __main__) ----
+COMPACT_JSON     = os.getenv("COMPACT_JSON", "false").lower() in ("1","true","yes","y")  # só {"ok":..,"motivo":..}
+FRONT_MIN        = os.getenv("FRONT_MIN", "false").lower() in ("1","true","yes","y")     # card único
+FRONT_BLOCKS     = os.getenv("FRONT_BLOCKS", "false").lower() in ("1","true","yes","y")  # {card, dias7, meta}
+FRIENDLY_OUTPUT  = os.getenv("FRIENDLY_OUTPUT", "false").lower() in ("1","true","yes","y")
+FRIENDLY_STYLE   = os.getenv("FRIENDLY_STYLE", "amigavel").strip().lower()               # amigavel | curto | formal
+MENTION_PET      = os.getenv("MENTION_PET", "false").lower() in ("1","true","yes","y")
+PET_FROM_TITLE   = os.getenv("PET_FROM_TITLE", "false").lower() in ("1","true","yes","y")
+FREE_EVENT_MODE  = os.getenv("FREE_EVENT_MODE", "false").lower() in ("1","true","yes","y")  # aceitar QUALQUER título como tipo de evento
+REC_VERBOSE      = os.getenv("REC_VERBOSE", "true").lower() in ("1","true","yes","y")
 
 for p in (DATA_DIR, GLDAS_RAW_DIR, GLDAS_OUT_DIR):
     p.mkdir(parents=True, exist_ok=True)
@@ -197,6 +204,7 @@ def derive_dest_name(url: str, for_direct: bool = False) -> str:
     return sanitize(last + ".nc4")
 
 def download_gldas(links: list[str], out_dir: Path, max_files: int) -> int:
+    # Auth via earthaccess (EARTHDATA_* no .env ou ~/.netrc)
     ea.login(strategy="environment", persist=True)
     sess = ea.get_requests_https_session()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -266,7 +274,19 @@ def subset_point(ds: xr.Dataset, lat: float, lon: float) -> xr.Dataset:
         lon = (lon + 360) % 360
     return ds.sel(lat=lat, lon=lon, method="nearest")
 
-# ---- classificações/UX helpers ----
+# ---- UX helpers ----
+def _r0(x):
+    try:
+        return None if x is None else int(round(float(x)))
+    except Exception:
+        return None
+
+def _r1(x):
+    try:
+        return None if x is None else round(float(x), 1)
+    except Exception:
+        return None
+
 def classifica_solar_wm2(wm2: float|None) -> str:
     if wm2 is None: return "—"
     if wm2 < 150: return "Nublado"
@@ -283,12 +303,76 @@ def escolhe_icone(rain_mm_day: float|None, solar_mean_wm2: float|None) -> str:
         return "☀️"
     return "🌤️"
 
-def indice_atividade(temp_c: float|None, rain_mm_day: float|None, wind_kmh: float|None) -> int:
+def _condicao_icone(chuva_mm: float | None, solar_wm2: float | None = None, vis_km: float | None = None, prob_chuva: float | None = None):
+    # Normaliza numéricos
+    def _f(v):
+        try: return None if v is None else float(v)
+        except: return None
+    chuva_mm  = _f(chuva_mm)
+    solar_wm2 = _f(solar_wm2)
+    vis_km    = _f(vis_km)
+    prob_chuva = _f(prob_chuva)
+
+    # Regras simples: prioriza chuva
+    if chuva_mm is not None:
+        if chuva_mm >= 8:   return "Chuva forte", "⛈️"
+        if chuva_mm >= 4:   return "Chuva moderada", "🌧️"
+        if chuva_mm >= 0.5: return "Chuva fraca", "🌦️"
+        # sem chuva significativa -> avalia "céu"
+        if solar_wm2 is not None:
+            return ("Nublado", "☁️") if solar_wm2 < 150 else ("Ensolarado", "☀️")
+        if vis_km is not None and vis_km <= 5:
+            return "Neblina", "🌫️"
+        return "Parcialmente nublado", "🌤️"
+
+    # sem dado de chuva -> usa outros sinais
+    if vis_km is not None and vis_km <= 5:
+        return "Neblina", "🌫️"
+    if solar_wm2 is not None:
+        return ("Nublado", "☁️") if solar_wm2 < 150 else ("Ensolarado", "☀️")
+    if prob_chuva is not None and prob_chuva >= 50:
+        return "Possível chuva", "🌦️"
+    return "Indefinido", "⛅"
+
+def _indice_atividade(temp_c: float | None, chuva_mm: float | None, vento_kmh: float | None, umid_pct: float | None):
+    # Escore 0–10: começa em 10 e vai penalizando
     score = 10
-    if temp_c is None or temp_c < 16 or temp_c > 30: score -= 2
-    if (rain_mm_day or 0) > 0.5: score -= 4
-    if (wind_kmh or 0) > 28: score -= 2
-    return int(max(0, min(10, score)))
+
+    # Temperatura (zona de conforto ~18–26°C)
+    if temp_c is not None:
+        t = float(temp_c)
+        if t < 10: score -= 3
+        elif t < 18: score -= 1
+        elif t > 35: score -= 4
+        elif t > 32: score -= 3
+        elif t > 26: score -= 1
+
+    # Chuva
+    if chuva_mm is not None:
+        r = float(chuva_mm)
+        if r >= 8: score -= 4
+        elif r >= 4: score -= 3
+        elif r >= 0.5: score -= 1
+
+    # Vento
+    if vento_kmh is not None:
+        v = float(vento_kmh)
+        if v > 40: score -= 3
+        elif v > 28: score -= 2
+        elif v > 12: score -= 1
+
+    # Umidade alta piora um pouco o conforto
+    if umid_pct is not None:
+        try:
+            if float(umid_pct) >= 85:
+                score -= 1
+        except:
+            pass
+
+    # Limites
+    if score < 0: score = 0
+    if score > 10: score = 10
+    return int(score)
 
 def process_gldas_to_daily(files, lat, lon) -> pd.DataFrame:
     K2C       = lambda x: x - 273.15
@@ -533,7 +617,7 @@ def _ollama_run(model: str, prompt: str, host: str = OLLAMA_HOST, timeout: int =
             cmd,
             shell=True,
             capture_output=True,
-            text=False,  # << lê bytes, não texto
+            text=False,  # lê bytes
             timeout=timeout,
             env={**os.environ, "OLLAMA_HOST": host},
         )
@@ -553,6 +637,52 @@ def _pega_prev_no_dia(prev: Optional[Dict[str,Any]], data_evento: str) -> Option
     except Exception:
         return None
 
+def _mensagem_deterministica(hist: dict, prev: dict | None, data_evento: str,
+                             evento_tipo: str, person_name: str, pet_name: str) -> str:
+    """Mensagem amigável (sem IA), usando previsão do dia se houver; senão, histórico."""
+    try:
+        data_pt = pd.to_datetime(data_evento).strftime("%d/%m/%Y")
+    except Exception:
+        data_pt = str(data_evento)
+
+    sujeito = person_name or "Você"
+    alvo = evento_tipo or "seu evento"
+
+    intro = f"{sujeito} vai {alvo}" + (f" com {pet_name}" if (MENTION_PET and pet_name) else "") + f" em {data_pt}? "
+
+    item = _pega_prev_no_dia(prev, data_evento)
+    partes = [intro]
+
+    if item:
+        tmin = item.get("tmin"); tmax = item.get("tmax")
+        try:
+            tspan = f"{int(round(tmin))}–{int(round(tmax))}°C" if tmin is not None and tmax is not None else None
+        except Exception:
+            tspan = None
+
+        pp = item.get("precip_prob") or 0
+        pr = item.get("precip_mm") or 0
+        riscos = []
+        if pr >= 10 or pp >= 60: riscos.append("chuva")
+        if (item.get("apparent_max") or item.get("tmax") or 0) >= 35: riscos.append("calor")
+        if (item.get("wind_max") or 0) >= 40: riscos.append("vento")
+        if (item.get("visibility_km") or 99) <= 5: riscos.append("baixa visibilidade")
+
+        base = f"Previsão aponta {tspan}." if tspan else "Previsão consultada."
+        if riscos:
+            partes.append(f"{base} Atenção com " + ", ".join(riscos) + ". ")
+        else:
+            partes.append(f"{base} Sem sinais relevantes. ")
+    else:
+        tm = (hist.get("temp_mean_c") or {}).get("mean")
+        pm = (hist.get("rain_mm_day") or {}).get("mean")
+        if tm is not None and pm is not None:
+            partes.append(f"Historicamente, média de {tm:.1f}°C e {pm:.1f} mm/dia neste período. ")
+
+    det = decide_passeio_curto(hist, prev, data_evento, evento_tipo)
+    partes.append("Parece uma boa! 👍" if det.get("ok") else "Considere plano B.")
+    return "".join(partes).strip()
+
 def gerar_recomendacao_contextual_ollama(
     hist: Dict[str,Any],
     prev: Optional[Dict[str,Any]],
@@ -564,7 +694,7 @@ def gerar_recomendacao_contextual_ollama(
 ) -> Dict[str, Any]:
     """
     Retorna SEMPRE um dict JSON curto:
-      {"ok": true|false, "motivo": "até 8 palavras", "mensagem": "texto rico (<=220 chars)"}
+      {"ok": true|false, "motivo": "até 8 palavras", "mensagem": "texto (<=220 chars)"}
     Se o Ollama falhar, cai no fallback determinístico.
     """
     def _deterministico_ok_motivo_msg() -> Dict[str,Any]:
@@ -622,121 +752,6 @@ def gerar_recomendacao_contextual_ollama(
     except Exception:
         return _deterministico_ok_motivo_msg()
 
-# --- RECOMENDAÇÃO DETERMINÍSTICA (curta) ---
-def gerar_recomendacao_texto(hist: dict, prev: dict | None, data_evento: str, curto: bool = True) -> str:
-    linhas: list[str] = []
-    alerta_hist = False
-
-    if hist and hist.get("ok"):
-        linhas.append(hist.get("resumo", ""))
-        pm = (hist.get("rain_mm_day") or {}).get("mean", 0.0)
-        if pm is not None and pm >= 10:
-            alerta_hist = True
-
-    item = _pega_prev_no_dia(prev, data_evento)
-
-    if curto:
-        if item:
-            pp   = item.get("precip_prob") or 0
-            pr   = item.get("precip_mm") or 0.0
-            app  = item.get("apparent_max") or item.get("tmax") or None
-            wmax = item.get("wind_max") or 0
-            vis  = item.get("visibility_km") or 99
-
-            risco = []
-            if pp >= 60 or pr >= 10: risco.append("chuva")
-            if app is not None and app >= 35: risco.append("calor")
-            if wmax >= 40: risco.append("vento")
-            if vis <= 5: risco.append("baixa visibilidade")
-
-            if risco:
-                return "⚠️ Recomendação: **evitar** — risco de " + ", ".join(risco) + "."
-            return "✅ Recomendação: **ok** — sem sinais relevantes para o dia."
-
-        if alerta_hist:
-            return "⚠️ Recomendação: **atenção** — histórico indica chuva/instabilidade no período."
-        return "✅ Recomendação: **ok** — histórico não indica risco relevante."
-
-    if item:
-        tmax = item.get("tmax"); tmin = item.get("tmin")
-        pp   = item.get("precip_prob"); pr = item.get("precip_mm")
-        hum  = item.get("humidity_mean"); vis = item.get("visibility_km")
-        wmax = item.get("wind_max"); app = item.get("apparent_max")
-        prov = item.get("provider", "open-meteo")
-        linhas.append(
-            f"Previsão ({prov}) para o dia: "
-            f"{tmin is not None and round(tmin)}–{tmax is not None and round(tmax)}°C, "
-            f"chuva {pr if pr is not None else 0:.1f} mm (prob {pp or 0}%), "
-            f"umidade {hum is not None and round(hum)}%, "
-            f"vis {vis is not None and round(vis,1)} km, "
-            f"vento máx {wmax} km/h, sensação máx {app}°C."
-        )
-    else:
-        linhas.append("ℹ️ A data do evento está fora do horizonte de 7 dias ou não há ponto diário correspondente.")
-
-    if alerta_hist:
-        linhas.append("⚠️ Em anos anteriores, acumulados diários elevados não são raros neste período.")
-
-    if not linhas:
-        linhas.append("Sem dados suficientes para recomendação.")
-    return " ".join(x for x in linhas if x)
-
-def _strip_accents(s: str) -> str:
-    return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
-
-_EVENT_MAP = [
-    (["churrasco", "bbq"], "churrasco"),
-    (["piquenique", "picnic"], "piquenique"),
-    (["corrida", "correr", "race", "maratona", "5k", "10k"], "corrida"),
-    (["trilha", "hiking", "caminhada"], "trilha"),
-    (["praia", "beach"], "praia"),
-    (["futebol", "pelada", "soccer"], "futebol"),
-    (["show", "concerto", "festival"], "show"),
-    (["voo", "aeroporto", "embarque", "aviao", "avião", "flight"], "viagem"),
-    (["viagem", "travel", "roadtrip"], "viagem"),
-    (["casamento", "wedding"], "casamento"),
-    (["aniversario", "aniversário", "birthday"], "aniversario"),
-    (["passeio", "passear"], "passeio"),
-    (["cachorro", "dog", "pet"], "passear com cachorro"),
-    (["bike", "bicicleta", "ciclismo", "pedal"], "ciclismo"),
-    (["moto", "motocicleta"], "passeio de moto"),
-    (["churras"], "churrasco"),
-]
-
-def _guess_pet_name(title_norm: str, original: str) -> Optional[str]:
-    m = re.search(r'["“”\'’]([^"“”\'’]{2,20})["“”\'’]', original)
-    if m: return m.group(1).strip()
-    m2 = re.search(r'\bcom\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÁÉÍÓÚÂÊÔÃÕÇ-]{1,20})\b', original)
-    if m2: return m2.group(1).strip()
-    m3 = re.search(r'\bcom\s+([a-z0-9\-]{2,20})\b', title_norm)
-    if m3:
-        cand = m3.group(1)
-        if cand not in ("amigos", "familia", "familiares", "galera", "time"):
-            return cand.capitalize()
-    return None
-
-def infer_context_from_title(title: str) -> Dict[str, Optional[str]]:
-    if not title:
-        return {"event_type": None, "person_name": None, "pet_name": None}
-    original = title.strip()
-    title_norm = _strip_accents(original).lower()
-    found_type = None
-    for keys, label in _EVENT_MAP:
-        for k in keys:
-            if f" {k} " in f" {title_norm} ":
-                found_type = label
-                break
-        if found_type:
-            break
-    if not found_type and ("passeio" in title_norm or "passear" in title_norm):
-        found_type = "passeio"
-    if ("cachorro" in title_norm or " dog " in f" {title_norm} " or " pet " in f" {title_norm} ") and "passeio" in title_norm:
-        found_type = "passear com cachorro"
-    pet_name = None
-    if found_type in ("passear com cachorro",):
-        pet_name = _guess_pet_name(title_norm, original)
-    return {"event_type": found_type or "evento", "person_name": None, "pet_name": pet_name}
-
 # ======== decisão binária ultra-curta ========
 def decide_passeio_curto(hist: dict, prev: dict | None, data_evento: str, evento_tipo: str = "passeio"):
     TH_PPROB = int(os.getenv("TH_PPROB", "50"))       # % chuva
@@ -769,65 +784,15 @@ def decide_passeio_curto(hist: dict, prev: dict | None, data_evento: str, evento
 
     return {"ok": True, "motivo": "Sem bloqueios."}
 
-def _mensagem_deterministica(hist: dict, prev: dict | None, data_evento: str,
-                             evento_tipo: str, person_name: str, pet_name: str) -> str:
-    """Mensagem amigável (sem IA), usando previsão do dia se houver; senão, histórico."""
-    try:
-        data_pt = pd.to_datetime(data_evento).strftime("%d/%m/%Y")
-    except Exception:
-        data_pt = str(data_evento)
-
-    sujeito = person_name or "Você"
-    alvo = evento_tipo or "seu evento"
-
-    if pet_name:
-        intro = f"{sujeito} vai {alvo} com {pet_name} em {data_pt}? "
-    else:
-        intro = f"{sujeito} vai {alvo} em {data_pt}? "
-
-    item = _pega_prev_no_dia(prev, data_evento)
-    partes = [intro]
-
-    if item:
-        tmin = item.get("tmin"); tmax = item.get("tmax")
-        try:
-            tspan = f"{int(round(tmin))}–{int(round(tmax))}°C" if tmin is not None and tmax is not None else None
-        except Exception:
-            tspan = None
-
-        pp = item.get("precip_prob") or 0
-        pr = item.get("precip_mm") or 0
-        riscos = []
-        if pr >= 10 or pp >= 60: riscos.append("chuva")
-        if (item.get("apparent_max") or item.get("tmax") or 0) >= 35: riscos.append("calor")
-        if (item.get("wind_max") or 0) >= 40: riscos.append("vento")
-        if (item.get("visibility_km") or 99) <= 5: riscos.append("baixa visibilidade")
-
-        base = f"Previsão aponta {tspan}." if tspan else "Previsão consultada."
-        if riscos:
-            partes.append(f"{base} Atenção com " + ", ".join(riscos) + ". ")
-        else:
-            partes.append(f"{base} Sem sinais relevantes. ")
-    else:
-        tm = (hist.get("temp_mean_c") or {}).get("mean")
-        pm = (hist.get("rain_mm_day") or {}).get("mean")
-        if tm is not None and pm is not None:
-            partes.append(f"Historicamente, média de {tm:.1f}°C e {pm:.1f} mm/dia neste período. ")
-
-    det = decide_passeio_curto(hist, prev, data_evento, evento_tipo)
-    partes.append("Parece uma boa! 👍" if det.get("ok") else "Considere plano B.")
-    return "".join(partes).strip()
-
 def decisao_binaria_evento(hist, prev, data_evento, evento_tipo="", person_name="", pet_name="") -> Dict[str, Any]:
-    REC_VERBOSE = os.getenv("REC_VERBOSE", "true").lower() in ("1","true","yes","y")
-
     if OLLAMA_ENABLE:
         try:
+            pet_safe = (pet_name or PET_NAME) if MENTION_PET else ""
             out_ai = gerar_recomendacao_contextual_ollama(
                 hist, prev, data_evento,
                 evento_tipo=evento_tipo or EVENT_TYPE,
                 person_name=person_name or PERSON_NAME,
-                pet_name=pet_name or PET_NAME,
+                pet_name=pet_safe,
                 model=OLLAMA_MODEL
             )
             if isinstance(out_ai, dict) and "ok" in out_ai and "motivo" in out_ai:
@@ -845,324 +810,23 @@ def decisao_binaria_evento(hist, prev, data_evento, evento_tipo="", person_name=
         det["mensagem"] = _mensagem_deterministica(hist, prev, data_evento, evento_tipo, person_name, pet_name)
     return det
 
-
-# ===================== Front: formato slim =====================
-def _round_or_none(x, ndigits=2):
-    try:
-        return round(float(x), ndigits)
-    except Exception:
-        return None
-
-def _pega_prev_no_dia_local(prev: dict | None, data_evento: str):
-    return _pega_prev_no_dia(prev, data_evento)
-
-def formatar_para_front(res: dict, event_title: str | None = None) -> dict:
-    ae = res.get("analise_evento", {}) or {}
-    hist = ae.get("historico", {}) or {}
-    prev = res.get("painel_7dias", {}) or {}
-    decisao = ae.get("decisao_binaria") or {"ok": False, "motivo": "dados insuficientes"}
-    contexto = ae.get("contexto_detectado") or {}
-    item_dia = _pega_prev_no_dia_local(prev, res.get("data_evento"))
-
-    def map_day(d: dict) -> dict:
-        return {
-            "data": str(pd.to_datetime(d.get("date")).date()) if d.get("date") else None,
-            "tMaxC": _round_or_none(d.get("tmax")),
-            "tMinC": _round_or_none(d.get("tmin")),
-            "sensacaoMaxC": _round_or_none(d.get("apparent_max")),
-            "chuvaMm": _round_or_none(d.get("precip_mm")),
-            "probChuvaPct": _round_or_none(d.get("precip_prob"), 0),
-            "ventoMaxKmh": _round_or_none(d.get("wind_max")),
-            "umidadePct": _round_or_none(d.get("humidity_mean")),
-            "visibilidadeKm": _round_or_none(d.get("visibility_km")),
-        }
-
-    out = {
-        "decisao": {
-            "ok": bool(decisao.get("ok")),
-            "motivo": str(decisao.get("motivo") or "").strip()[:60]
-        },
-        "evento": {
-            "data": str(pd.to_datetime(res.get("data_evento")).date()) if res.get("data_evento") else None,
-            "titulo": event_title or None,
-            "tipo": contexto.get("event_type") or None
-        },
-        "local": {
-            "lat": res.get("coords", {}).get("lat"),
-            "lon": res.get("coords", {}).get("lon")
-        },
-        "historico": {
-            "fonte": ae.get("fonte_historico"),
-            "amostra": hist.get("amostra"),
-            "chuvaMediaMm": _round_or_none((hist.get("rain_mm_day") or {}).get("mean")),
-            "tempMediaC": _round_or_none((hist.get("temp_mean_c") or {}).get("mean")),
-            "texto": hist.get("resumo")
-        },
-        "previsao": {
-            "provedor": prev.get("provider"),
-            "diaEvento": (
-                {"existe": True, **map_day(item_dia)} if item_dia else
-                {"existe": False, "data": str(pd.to_datetime(res.get("data_evento")).date()) if res.get("data_evento") else None,
-                 "tMaxC": None, "tMinC": None, "sensacaoMaxC": None,
-                 "chuvaMm": None, "probChuvaPct": None, "ventoMaxKmh": None, "umidadePct": None, "visibilidadeKm": None}
-            ),
-            "proximos7dias": [map_day(d) for d in (prev.get("daily") or [])]
-        }
-    }
-    return out
-
-# ===================== Orquestração =====================
-def avaliar_evento(lat: float, lon: float, data_evento: str,
-                   subset_txt: Path = SUBSET_FILE,
-                   gldas_raw_dir: Path = GLDAS_RAW_DIR,
-                   max_files:int = MAX_FILES,
-                   janela_hist:int = 1,
-                   anos_hist= (2020,2021,2022,2023,2024),
-                   timezone:str = TIMEZONE,
-                   event_title: Optional[str] = None) -> Dict[str,Any]:
-    # 1) localizar subset TXT
-    txt = autodiscover_subset_file(subset_txt, DATA_DIR)
-
-    # 2) ler todos os links e filtrar pela janela
-    links_all = read_links_from_txt(txt)
-    links = filter_links_for_event_window(links_all, data_evento,
-                                          janela=janela_hist, anos=anos_hist)
-
-    # 3) baixar os arquivos necessários
-    limite = len(links) if max_files == 0 else min(max_files, len(links))
-    download_gldas(links, gldas_raw_dir, max_files=limite)
-
-    # 4) Processar GLDAS -> diário para o ponto
-    files = list_nc4(gldas_raw_dir)
-    hist: Dict[str, Any] = {"ok": False, "msg": "Sem dados GLDAS para a janela."}
-    if files:
-        try:
-            df_daily = process_gldas_to_daily(files, lat, lon)
-            hist = climatologia(df_daily, data_evento,
-                                anos=anos_hist, janela=janela_hist)
-            if hist.get("ok"):
-                hist["fonte"] = "GLDAS/Earthdata"
-        except Exception as e:
-            hist = {"ok": False, "msg": f"Falha ao processar GLDAS: {e}"}
-
-    # 5) Fallback histórico (ERA5) se GLDAS não cobriu
-    if not hist.get("ok"):
-        print("… GLDAS insuficiente → usando fallback ERA5.")
-        hist = hist_fallback_era5_openmeteo(lat, lon, data_evento,
-                                            janela=janela_hist, anos=anos_hist)
-
-    # 6) Previsão 7 dias
-    prev = previsao_7_dias(lat, lon, days=7, timezone=timezone)
-
-    # 7) Recomendação determinística (sempre)
-    texto = gerar_recomendacao_texto(hist, prev, data_evento, curto=True)
-
-    # 8) Decisão binária compacta (IA local -> fallback determinístico)
-    inferidos = infer_context_from_title(event_title or "")
-    decisao = decisao_binaria_evento(
-        hist, prev, data_evento,
-        evento_tipo=(inferidos.get("event_type") or EVENT_TYPE or "evento"),
-        person_name=(inferidos.get("person_name") or PERSON_NAME),
-        pet_name=(inferidos.get("pet_name") or PET_NAME),
-    )
-
-    return {
-        "ok": True,
-        "coords": {"lat": lat, "lon": lon},
-        "data_evento": data_evento,
-        "painel_7dias": prev,
-        "analise_evento": {
-            "historico": hist,
-            "fonte_historico": hist.get("fonte", "desconhecida"),
-            "usou_earthdata": hist.get("fonte") == "GLDAS/Earthdata",
-            "recomendacao": texto,
-            "decisao_binaria": decisao,
-            "contexto_detectado": inferidos,
-        }
-    }
-
-# ===== Formatação "amigável ao front" (JSON slim) =====
-def _round2(x):
-    try:
-        return None if x is None else round(float(x), 2)
-    except Exception:
-        return None
-
-def formatar_para_front(payload: dict, event_title: str | None = None) -> dict:
-    """
-    Converte o payload técnico do avaliar_evento() em um JSON enxuto pro front:
-      - chaves simples (tMaxC, chuvaMm, probChuvaPct, etc.)
-      - decisão binária curta
-      - resumo histórico compacto
-      - previsão do dia do evento (se existir no horizonte) + próximos 7 dias
-    """
-    # campos básicos
-    lat = payload.get("coords", {}).get("lat")
-    lon = payload.get("coords", {}).get("lon")
-    data_evento = payload.get("data_evento")
-    analise = payload.get("analise_evento", {}) or {}
-    hist = analise.get("historico", {}) or {}
-    prev = payload.get("painel_7dias", {}) or {}
-    contexto = analise.get("contexto_detectado", {}) or {}
-    tipo = contexto.get("event_type") or os.getenv("EVENT_TYPE") or "evento"
-
-    # decisão binária
-    decisao = analise.get("decisao_binaria") or {"ok": False, "motivo": "dados insuficientes"}
-
-    # histórico (compacto)
-    chuva_media = (hist.get("rain_mm_day") or {}).get("mean")
-    temp_media = (hist.get("temp_mean_c") or {}).get("mean")
-    hist_compacto = {
-        "fonte": hist.get("fonte", "desconhecida"),
-        "amostra": hist.get("amostra"),
-        "chuvaMediaMm": _round2(chuva_media),
-        "tempMediaC": _round2(temp_media),
-        "texto": hist.get("resumo"),
-    }
-
-    # previsão (dia do evento + 7 dias)
-    provider = prev.get("provider")
-    daily = prev.get("daily") or []
-
-    # função de mapeamento por dia
-    def _map_day(d):
-        return {
-            "data": str(pd.to_datetime(d.get("date")).date()) if d.get("date") else None,
-            "tMaxC": _round2(d.get("tmax")),
-            "tMinC": _round2(d.get("tmin")),
-            "sensacaoMaxC": _round2(d.get("apparent_max")),
-            "chuvaMm": _round2(d.get("precip_mm")),
-            "probChuvaPct": _round2(d.get("precip_prob")),
-            "ventoMaxKmh": _round2(d.get("wind_max")),
-            "umidadePct": _round2(d.get("humidity_mean")),
-            "visibilidadeKm": _round2(d.get("visibility_km")),
-        }
-
-    # dia do evento (se existir nos próximos 7 dias)
-    item_evento = None
-    try:
-        de = pd.to_datetime(data_evento).date()
-        for d in daily:
-            if pd.to_datetime(d.get("date")).date() == de:
-                item_evento = _map_day(d)
-                item_evento["existe"] = True
-                break
-    except Exception:
-        item_evento = None
-
-    if not item_evento:
-        item_evento = {
-            "existe": False,
-            "data": str(pd.to_datetime(data_evento).date()) if data_evento else None,
-            "tMaxC": None, "tMinC": None, "sensacaoMaxC": None,
-            "chuvaMm": None, "probChuvaPct": None, "ventoMaxKmh": None,
-            "umidadePct": None, "visibilidadeKm": None,
-        }
-
-    proximos7 = [_map_day(d) for d in daily]
-
-    return {
-        "decisao": {"ok": bool(decisao.get("ok")), "motivo": str(decisao.get("motivo", ""))[:80]},
-        "evento": {"data": data_evento, "titulo": event_title or None, "tipo": tipo},
-        "local": {"lat": lat, "lon": lon},
-        "historico": hist_compacto,
-        "previsao": {
-            "provedor": provider,
-            "diaEvento": item_evento,
-            "proximos7dias": proximos7
-        }
-    }
-
-# ===== JSON "bem amigável" para o front =====
-def _r1(x):
-    try:
-        return None if x is None else round(float(x), 1)
-    except Exception:
-        return None
-
-def _r0(x):
-    try:
-        return None if x is None else int(round(float(x)))
-    except Exception:
-        return None
-
-def _condicao_icone(chuva_mm: float | None, solar_wm2: float | None = None, vis_km: float | None = None, prob_chuva: float | None = None):
-    # Normaliza numéricos
-    def _f(v):
-        try: return None if v is None else float(v)
-        except: return None
-    chuva_mm  = _f(chuva_mm)
-    solar_wm2 = _f(solar_wm2)
-    vis_km    = _f(vis_km)
-    prob_chuva = _f(prob_chuva)
-
-    # Regras simples: prioriza chuva
-    if chuva_mm is not None:
-        if chuva_mm >= 8:   return "Chuva forte", "⛈️"
-        if chuva_mm >= 4:   return "Chuva moderada", "🌧️"
-        if chuva_mm >= 0.5: return "Chuva fraca", "🌦️"
-        # sem chuva significativa -> avalia "céu"
-        if solar_wm2 is not None:
-            return ("Nublado", "☁️") if solar_wm2 < 150 else ("Ensolarado", "☀️")
-        if vis_km is not None and vis_km <= 5:
-            return "Neblina", "🌫️"
-        return "Parcialmente nublado", "🌤️"
-
-    # sem dado de chuva -> usa outros sinais
-    if vis_km is not None and vis_km <= 5:
-        return "Neblina", "🌫️"
-    if solar_wm2 is not None:
-        return ("Nublado", "☁️") if solar_wm2 < 150 else ("Ensolarado", "☀️")
-    if prob_chuva is not None and prob_chuva >= 50:
-        return "Possível chuva", "🌦️"
-    return "Indefinido", "⛅"
-
-def _indice_atividade(temp_c: float | None, chuva_mm: float | None, vento_kmh: float | None, umid_pct: float | None):
-    # Escore 0–10: começa em 10 e vai penalizando
-    score = 10
-
-    # Temperatura (zona de conforto ~18–26°C)
-    if temp_c is not None:
-        t = float(temp_c)
-        if t < 10: score -= 3
-        elif t < 18: score -= 1
-        elif t > 35: score -= 4
-        elif t > 32: score -= 3
-        elif t > 26: score -= 1
-
-    # Chuva
-    if chuva_mm is not None:
-        r = float(chuva_mm)
-        if r >= 8: score -= 4
-        elif r >= 4: score -= 3
-        elif r >= 0.5: score -= 1
-
-    # Vento
-    if vento_kmh is not None:
-        v = float(vento_kmh)
-        if v > 40: score -= 3
-        elif v > 28: score -= 2
-        elif v > 12: score -= 1
-
-    # Umidade alta piora um pouco o conforto
-    if umid_pct is not None:
-        try:
-            if float(umid_pct) >= 85:
-                score -= 1
-        except:
-            pass
-
-    # Limites
-    if score < 0: score = 0
-    if score > 10: score = 10
-    return int(score)
-
-# --- helper: converte 1 dia de previsão em formato amigável ---
+# ===================== Front: formatos amigáveis =====================
 def _formatar_prev_diaria(d: dict) -> dict:
-    tmax = d.get("tmax"); tmin = d.get("tmin")
-    chuva = d.get("precip_mm"); prob = d.get("precip_prob")
-    vento = d.get("wind_max"); umid = d.get("humidity_mean")
-    vis   = d.get("visibility_km")
+    if not isinstance(d, dict):
+        return {}
+    data = None
+    try:
+        data = str(pd.to_datetime(d.get("date")).date())
+    except Exception:
+        data = d.get("date") or None
+
+    tmin = d.get("tmin")
+    tmax = d.get("tmax")
+    chuva = d.get("precip_mm")
+    prob = d.get("precip_prob")
+    wnd  = d.get("wind_max")
+    hum  = d.get("humidity_mean")
+    vis  = d.get("visibility_km")
 
     # média térmica para índice
     tempC = None
@@ -1177,21 +841,76 @@ def _formatar_prev_diaria(d: dict) -> dict:
         tempC = None
 
     cond, icone = _condicao_icone(chuva_mm=chuva, solar_wm2=None, vis_km=vis, prob_chuva=prob)
-    indice = _indice_atividade(tempC, chuva, vento, umid)
+    indice = _indice_atividade(tempC, chuva, wnd, hum)
 
     return {
-        "data": str(pd.to_datetime(d.get("date")).date()) if d.get("date") else None,
+        "data": data,
         "tminC": _r1(tmin),
         "tmaxC": _r1(tmax),
         "chuvaMm": _r1(chuva),
         "probChuvaPct": _r0(prob),
-        "ventoMaxKmh": _r1(vento),
-        "umidadePct": _r0(umid),
+        "ventoMaxKmh": _r1(wnd),
+        "umidadePct": _r0(hum),
         "visKm": _r1(vis),
         "condicao": cond,
         "icone": icone,
-        "indiceAtividade": indice,
+        "indiceAtividade": indice
     }
+
+def compose_human_message(data_evento: str,
+                          event_type: str,
+                          person_name: str,
+                          pet_name: Optional[str],
+                          hist: Dict[str,Any],
+                          decision: Dict[str,Any]) -> str:
+    """
+    Mensagem curta/simpática configurável via FRIENDLY_STYLE (amigavel|curto|formal)
+    e MENTION_PET (só cita pet se true e houver nome).
+    """
+    # quem / quando
+    try:
+        data_pt = pd.to_datetime(data_evento).strftime("%d/%m/%Y")
+    except Exception:
+        data_pt = str(data_evento)
+
+    person = (person_name or "").strip()
+    pet    = (pet_name or "").strip()
+    say_pet = (MENTION_PET and bool(pet))
+
+    # histórico curto
+    t_mean = (hist.get("temp_mean_c") or {}).get("mean")
+    r_mean = (hist.get("rain_mm_day") or {}).get("mean")
+    hist_bits = []
+    if t_mean is not None: hist_bits.append(f"{t_mean:.1f}°C")
+    if r_mean is not None: hist_bits.append(f"{r_mean:.1f} mm/dia")
+    hist_txt = ("Histórico: " + ", ".join(hist_bits) + ".") if hist_bits else ""
+
+    ok = bool(decision.get("ok"))
+    motivo = (decision.get("motivo") or "").strip()
+
+    if FRIENDLY_STYLE in ("curto","curtinho"):
+        base = f"{person or 'Você'} vai {event_type}" + (f" com {pet}" if say_pet else "") + f" em {data_pt}? "
+        fin  = "Parece ok." if ok else "Considere um plano B."
+        return (base + (hist_txt + " " if hist_txt else "") + fin).strip()
+
+    if FRIENDLY_STYLE in ("formal","neutro"):
+        base = f"{person or 'Usuário'} tem {event_type}" + (f" com {pet}" if say_pet else "") + f" em {data_pt}. "
+        fin  = "Cenário favorável." if ok else f"Atenção: {motivo or 'condições não ideais'}."
+        return (base + (hist_txt + " " if hist_txt else "") + fin).strip()
+
+    # amigável (padrão)
+    if ok:
+        head = f"Boa, {person or 'você'}!"
+        corpo = f" {data_pt} tá com cara de dar certo para {event_type}" + (f" com {pet}" if say_pet else "") + "."
+        cauda = " Fique de olho na previsão da semana. 😉"
+        extra = f" {hist_txt}" if hist_txt else ""
+        return (head + corpo + extra + cauda).strip()
+    else:
+        head = f"{person or 'Ei'}, eu iria com calma:"
+        corpo = f" para {event_type}" + (f" com {pet}" if say_pet else "") + f" em {data_pt}, {motivo or 'as condições não são ideais'}."
+        extra = f" {hist_txt}" if hist_txt else ""
+        cauda = " Se puder, tenha um plano B. ✨"
+        return (head + corpo + extra + cauda).strip()
 
 def formatar_card_evento(payload: dict) -> dict:
     lat = payload.get("coords", {}).get("lat")
@@ -1202,7 +921,7 @@ def formatar_card_evento(payload: dict) -> dict:
     prev = payload.get("painel_7dias", {}) or {}
     decisao = analise.get("decisao_binaria") or {"ok": False, "motivo": "dados insuficientes"}
 
-    # tenta achar o dia na previsão
+    # acha o dia na previsão
     daily = prev.get("daily") or []
     item_prev = None
     try:
@@ -1253,10 +972,9 @@ def formatar_card_evento(payload: dict) -> dict:
         },
         "recomendacao": {
             "ok": bool(decisao.get("ok")),
-            "motivo": str(decisao.get("motivo",""))[:80]
+            "motivo": str(decisao.get("motivo",""))[:120]
         }
     }
-    # anexa mensagem rica, se houver
     if "mensagem" in decisao and decisao["mensagem"]:
         card["recomendacao"]["mensagem"] = decisao["mensagem"]
     return card
@@ -1265,7 +983,12 @@ def montar_blocos_front(payload: dict, limitar_dias: int = 7) -> dict:
     prev = payload.get("painel_7dias", {}) or {}
     hist = (payload.get("analise_evento", {}) or {}).get("historico", {}) or {}
     daily = prev.get("daily") or []
-    dias_fmt = [_formatar_prev_diaria(d) for d in (daily[:limitar_dias] if limitar_dias else daily)]
+    # ordena por data para evitar datas fora de ordem
+    try:
+        daily_sorted = sorted(daily, key=lambda x: pd.to_datetime(x.get("date")))
+    except Exception:
+        daily_sorted = daily
+    dias_fmt = [_formatar_prev_diaria(d) for d in (daily_sorted[:limitar_dias] if limitar_dias else daily_sorted)]
 
     return {
         "card": formatar_card_evento(payload),
@@ -1276,11 +999,12 @@ def montar_blocos_front(payload: dict, limitar_dias: int = 7) -> dict:
         }
     }
 
-# --- substitua sua função por esta versão estendida ---
 def formatar_bem_amigavel(payload: dict) -> dict:
     """
     Cartão minimalista para o front + painel amigável dos próximos 7 dias.
+    Inclui 'mensagem' dentro de 'recomendacao'.
     """
+    # bases
     lat = payload.get("coords", {}).get("lat")
     lon = payload.get("coords", {}).get("lon")
     data_evento = payload.get("data_evento")
@@ -1289,7 +1013,7 @@ def formatar_bem_amigavel(payload: dict) -> dict:
     prev = payload.get("painel_7dias", {}) or {}
     decisao = analise.get("decisao_binaria") or {"ok": False, "motivo": "dados insuficientes"}
 
-    # tenta achar o dia do evento na previsão
+    # previsão do dia
     daily = prev.get("daily") or []
     item_prev = None
     try:
@@ -1302,7 +1026,6 @@ def formatar_bem_amigavel(payload: dict) -> dict:
         item_prev = None
 
     if item_prev:
-        # PREVISÃO para o dia do evento
         tmax = item_prev.get("tmax")
         tmin = item_prev.get("tmin")
         temp_c = None
@@ -1327,9 +1050,8 @@ def formatar_bem_amigavel(payload: dict) -> dict:
             prob_chuva=item_prev.get("precip_prob"),
         )
         indice = _indice_atividade(temp_c, chuva_mm, vento_kmh, umid_pct)
-
     else:
-        # CLIMATOLOGIA (médias) quando a data não está no horizonte de 7 dias
+        # fora do horizonte -> climatologia
         temp_c    = (hist.get("temp_mean_c") or {}).get("mean")
         chuva_mm  = (hist.get("rain_mm_day") or {}).get("mean")
         vento_kmh = (hist.get("wind_mean_kmh") or {}).get("mean")
@@ -1350,44 +1072,295 @@ def formatar_bem_amigavel(payload: dict) -> dict:
         "indiceAtividade": indice,
     }
 
-    # painel dos próximos 7 dias (amigável)
+    # próximos 7 dias
     proximos7 = []
     if isinstance(daily, list) and daily:
-        for d in daily[:7]:
+        try:
+            daily_sorted = sorted(daily, key=lambda x: pd.to_datetime(x.get("date")))
+        except Exception:
+            daily_sorted = daily
+        for d in daily_sorted[:7]:
             proximos7.append(_formatar_prev_diaria(d))
+
+    # mensagem simpática
+    ctx = (analise.get("contexto_detectado") or {})
+    event_type_final = (ctx.get("event_type") or EVENT_TYPE or "evento")
+    person_final = (PERSON_NAME or "")
+    pet_final = (ctx.get("pet_name") or PET_NAME)
+
+    try:
+        mensagem = compose_human_message(
+            data_evento=data_evento,
+            event_type=event_type_final,
+            person_name=person_final,
+            pet_name=pet_final,
+            hist=hist,
+            decision=decisao
+        )
+    except Exception:
+        mensagem = None
 
     return {
         "data": str(pd.to_datetime(data_evento).date()) if data_evento else None,
         "local": {"lat": lat, "lon": lon},
         "resumo": resumo,
         "recomendacao": {
-            "ok": bool(dicisao := decisao.get("ok")),
-            "motivo": str(decisao.get("motivo", ""))[:80]
+            "ok": bool(decisao.get("ok")),
+            "motivo": str(decisao.get("motivo", "")).strip()[:120],
+            "mensagem": mensagem
         },
         "proximos7dias": proximos7,
         "fonte_previsao": prev.get("provider"),
         "fonte_historico": hist.get("fonte") or analise.get("fonte_historico"),
     }
 
+# ===================== Contexto do evento (título livre ou mapeado) =====================
+def _strip_accents(s: str) -> str:
+    return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+
+_EVENT_MAP = [
+    (["churrasco", "bbq"], "churrasco"),
+    (["piquenique", "picnic"], "piquenique"),
+    (["corrida", "correr", "race", "maratona", "5k", "10k"], "corrida"),
+    (["trilha", "hiking", "caminhada"], "trilha"),
+    (["praia", "beach"], "praia"),
+    (["futebol", "pelada", "soccer"], "futebol"),
+    (["show", "concerto", "festival"], "show"),
+    (["voo", "aeroporto", "embarque", "aviao", "avião", "flight"], "viagem"),
+    (["viagem", "travel", "roadtrip"], "viagem"),
+    (["casamento", "wedding"], "casamento"),
+    (["aniversario", "aniversário", "birthday"], "aniversario"),
+    (["passeio", "passear"], "passeio"),
+    (["cachorro", "dog", "pet"], "passear com cachorro"),
+    (["bike", "bicicleta", "ciclismo", "pedal"], "ciclismo"),
+    (["moto", "motocicleta"], "passeio de moto"),
+    (["churras"], "churrasco"),
+]
+
+def _guess_pet_name(title_norm: str, original: str) -> Optional[str]:
+    m = re.search(r'["“”\'’]([^"“”\'’]{2,20})["“”\'’]', original)
+    if m: return m.group(1).strip()
+    m2 = re.search(r'\bcom\s+([A-ZÁÉÍÓÚÂÊÔÃÕÇ][\wÁÉÍÓÚÂÊÔÃÕÇ-]{1,20})\b', original)
+    if m2: return m2.group(1).strip()
+    m3 = re.search(r'\bcom\s+([a-z0-9\-]{2,20})\b', title_norm)
+    if m3:
+        cand = m3.group(1)
+        if cand not in ("amigos", "familia", "familiares", "galera", "time"):
+            return cand.capitalize()
+    return None
+
+def infer_context_from_title(title: str, free_mode: bool = False, allow_pet_guess: bool = False) -> Dict[str, Optional[str]]:
+    """
+    Retorna: {"event_type": str, "person_name": Optional[str], "pet_name": Optional[str]}
+    - Se free_mode=True: usa o título como event_type (sem mapa fixo).
+    - Só tenta adivinhar pet se allow_pet_guess=True.
+    """
+    if not title:
+        return {"event_type": None, "person_name": None, "pet_name": None}
+
+    original = title.strip()
+    title_norm = _strip_accents(original).lower()
+
+    # modo livre: qualquer texto vira tipo do evento
+    if free_mode:
+        pet_name = _guess_pet_name(title_norm, original) if allow_pet_guess else None
+        short = original if len(original) <= 60 else original[:60].rsplit(" ", 1)[0]
+        return {"event_type": short, "person_name": None, "pet_name": pet_name}
+
+    # modo mapa + heurísticas
+    found_type = None
+    for keys, label in _EVENT_MAP:
+        for k in keys:
+            if f" {k} " in f" {title_norm} " or title_norm.startswith(k + " ") or title_norm.endswith(" " + k):
+                found_type = label
+                break
+        if found_type:
+            break
+
+    if not found_type and ("passeio" in title_norm or "passear" in title_norm):
+        found_type = "passeio"
+    if ("cachorro" in title_norm or " dog " in f" {title_norm} " or " pet " in f" {title_norm} ") and ("passeio" in title_norm or "passear" in title_norm):
+        found_type = "passear com cachorro"
+
+    pet_name = _guess_pet_name(title_norm, original) if (allow_pet_guess and found_type == "passear com cachorro") else None
+
+    if not found_type:
+        fallback = original.strip()
+        if len(fallback) > 60:
+            fallback = fallback[:60].rsplit(" ", 1)[0]
+        found_type = fallback
+
+    return {"event_type": found_type or "evento", "person_name": None, "pet_name": pet_name}
+
+def gerar_recomendacao_texto(hist: dict, prev: dict | None, data_evento: str, curto: bool = True) -> str:
+    """
+    Recomendações determinísticas curtas (sem IA).
+    - Se existir previsão para o dia do evento, usa ela.
+    - Senão, usa o histórico/climatologia.
+    """
+    linhas: list[str] = []
+    alerta_hist = False
+
+    if hist and hist.get("ok"):
+        linhas.append(hist.get("resumo", ""))
+        pm = (hist.get("rain_mm_day") or {}).get("mean", 0.0)
+        if pm is not None and pm >= 10:
+            alerta_hist = True
+
+    # pega o item da previsão exatamente no dia do evento
+    item = _pega_prev_no_dia(prev, data_evento)
+
+    if curto:
+        if item:
+            pp   = item.get("precip_prob") or 0
+            pr   = item.get("precip_mm") or 0.0
+            app  = item.get("apparent_max") or item.get("tmax") or None
+            wmax = item.get("wind_max") or 0
+            vis  = item.get("visibility_km") or 99
+
+            risco = []
+            if pp >= 60 or pr >= 10: risco.append("chuva")
+            if app is not None and app >= 35: risco.append("calor")
+            if wmax >= 40: risco.append("vento")
+            if vis <= 5: risco.append("baixa visibilidade")
+
+            if risco:
+                return "⚠️ Recomendação: **evitar** — risco de " + ", ".join(risco) + "."
+            return "✅ Recomendação: **ok** — sem sinais relevantes para o dia."
+
+        if alerta_hist:
+            return "⚠️ Recomendação: **atenção** — histórico indica chuva/instabilidade no período."
+        return "✅ Recomendação: **ok** — histórico não indica risco relevante."
+
+    # versão não-curta (texto mais completo)
+    if item:
+        tmax = item.get("tmax"); tmin = item.get("tmin")
+        pp   = item.get("precip_prob"); pr = item.get("precip_mm")
+        hum  = item.get("humidity_mean"); vis = item.get("visibility_km")
+        wmax = item.get("wind_max"); app = item.get("apparent_max")
+        prov = item.get("provider", "open-meteo")
+
+        try:
+            tspan = f"{int(round(tmin))}–{int(round(tmax))}°C" if (tmin is not None and tmax is not None) else None
+        except Exception:
+            tspan = None
+
+        linhas.append(
+            f"Previsão ({prov}) para o dia: "
+            f"{tspan or 'temperaturas disponíveis'}, "
+            f"chuva {0 if pr is None else round(pr,1)} mm (prob {pp or 0}%), "
+            f"umidade {'' if hum is None else int(round(hum))}%, "
+            f"vis {'' if vis is None else round(vis,1)} km, "
+            f"vento máx {wmax or 0} km/h, sensação máx {'' if app is None else round(app,1)}°C."
+        )
+    else:
+        tm = (hist.get("temp_mean_c") or {}).get("mean")
+        pm = (hist.get("rain_mm_day") or {}).get("mean")
+        if tm is not None and pm is not None:
+            linhas.append(f"Historicamente, média de {tm:.1f}°C e {pm:.1f} mm/dia neste período.")
+
+    if alerta_hist:
+        linhas.append("⚠️ Em anos anteriores, acumulados diários elevados não são raros neste período.")
+
+    return " ".join(x for x in linhas if x).strip() or "Sem dados suficientes para recomendação."
+
+# ===================== Orquestração =====================
+def avaliar_evento(lat: float, lon: float, data_evento: str,
+                   subset_txt: Path = SUBSET_FILE,
+                   gldas_raw_dir: Path = GLDAS_RAW_DIR,
+                   max_files:int = MAX_FILES,
+                   janela_hist:int = 1,
+                   anos_hist= (2020,2021,2022,2023,2024),
+                   timezone:str = TIMEZONE,
+                   event_title: Optional[str] = None) -> Dict[str,Any]:
+    # 1) subset
+    txt = autodiscover_subset_file(subset_txt, DATA_DIR)
+
+    # 2) links + filtro
+    links_all = read_links_from_txt(txt)
+    links = filter_links_for_event_window(links_all, data_evento,
+                                          janela=janela_hist, anos=anos_hist)
+
+    # 3) download
+    limite = len(links) if max_files == 0 else min(max_files, len(links))
+    download_gldas(links, gldas_raw_dir, max_files=limite)
+
+    # 4) GLDAS -> diário
+    files = list_nc4(gldas_raw_dir)
+    hist: Dict[str, Any] = {"ok": False, "msg": "Sem dados GLDAS para a janela."}
+    if files:
+        try:
+            df_daily = process_gldas_to_daily(files, lat, lon)
+            hist = climatologia(df_daily, data_evento,
+                                anos=anos_hist, janela=janela_hist)
+            if hist.get("ok"):
+                hist["fonte"] = "GLDAS/Earthdata"
+        except Exception as e:
+            hist = {"ok": False, "msg": f"Falha ao processar GLDAS: {e}"}
+
+    # 5) fallback histórico
+    if not hist.get("ok"):
+        print("… GLDAS insuficiente → usando fallback ERA5.")
+        hist = hist_fallback_era5_openmeteo(lat, lon, data_evento,
+                                            janela=janela_hist, anos=anos_hist)
+
+    # 6) Previsão 7 dias
+    prev = previsao_7_dias(lat, lon, days=7, timezone=timezone)
+
+    # 7) Recomendação determinística (string)
+    texto = gerar_recomendacao_texto(hist, prev, data_evento, curto=True)
+
+    # 8) Contexto do evento (livre se FREE_EVENT_MODE)
+    inferidos = infer_context_from_title(event_title or "", free_mode=FREE_EVENT_MODE, allow_pet_guess=PET_FROM_TITLE)
+
+    # 9) Decisão (IA local -> fallback determinístico)
+    decisao = decisao_binaria_evento(
+        hist, prev, data_evento,
+        evento_tipo=(inferidos.get("event_type") or EVENT_TYPE or (event_title or "evento")),
+        person_name=(inferidos.get("person_name") or PERSON_NAME),
+        pet_name=(inferidos.get("pet_name") or PET_NAME),
+    )
+
+    return {
+        "ok": True,
+        "coords": {"lat": lat, "lon": lon},
+        "data_evento": data_evento,
+        "painel_7dias": prev,
+        "analise_evento": {
+            "historico": hist,
+            "fonte_historico": hist.get("fonte", "desconhecida"),
+            "usou_earthdata": hist.get("fonte") == "GLDAS/Earthdata",
+            "recomendacao": texto,
+            "decisao_binaria": decisao,
+            "contexto_detectado": inferidos,
+        }
+    }
+
 # ===================== Main (exemplo CLI) =====================
 if __name__ == "__main__":
     import sys, os, json
+
     LAT = float(os.getenv("LAT", "-23.62"))
     LON = float(os.getenv("LON", "-46.55"))
     DATA_EVENTO = os.getenv("TARGET_DATE", "2025-10-07")
     EVENT_TITLE = os.getenv("EVENT_TITLE", "")
 
-    COMPACT_JSON = os.getenv("COMPACT_JSON", "false").lower() in ("1","true","yes","y")
-    FRONT_MIN    = os.getenv("FRONT_MIN", "false").lower() in ("1","true","yes","y")
-    FRONT_BLOCKS = os.getenv("FRONT_BLOCKS", "false").lower() in ("1","true","yes","y")
+    # flags do .env (reforça leitura aqui também)
+    COMPACT_JSON    = os.getenv("COMPACT_JSON", "false").lower() in ("1","true","yes","y")
+    FRONT_MIN       = os.getenv("FRONT_MIN", "false").lower() in ("1","true","yes","y")
+    FRONT_BLOCKS    = os.getenv("FRONT_BLOCKS", "false").lower() in ("1","true","yes","y")
+    FRIENDLY_OUTPUT = os.getenv("FRIENDLY_OUTPUT", "false").lower() in ("1","true","yes","y")
 
-    # flags de CLI
+    # flags via CLI
     if any(a in ("--compact","-c") for a in sys.argv[1:]): COMPACT_JSON = True
     if any(a in ("--min","--card") for a in sys.argv[1:]): FRONT_MIN = True
     if any(a in ("--blocks","--blocos") for a in sys.argv[1:]): FRONT_BLOCKS = True
+    if any(a in ("--friendly","--amigavel") for a in sys.argv[1:]): FRIENDLY_OUTPUT = True
 
     res = avaliar_evento(LAT, LON, DATA_EVENTO, event_title=EVENT_TITLE)
 
+    # Ordem de prioridade de saída:
+    # 1) --compact  2) --blocks  3) --min  4) FRIENDLY_OUTPUT  5) payload completo
     if COMPACT_JSON:
         payload = res.get("analise_evento", {}).get("decisao_binaria", {"ok": False, "motivo": "dados insuficientes"})
         print(json.dumps(payload, ensure_ascii=False))
@@ -1395,6 +1368,8 @@ if __name__ == "__main__":
         print(json.dumps(montar_blocos_front(res), ensure_ascii=False))
     elif FRONT_MIN:
         print(json.dumps(formatar_card_evento(res), ensure_ascii=False))
+    elif FRIENDLY_OUTPUT:
+        print(json.dumps(formatar_bem_amigavel(res), ensure_ascii=False))
     else:
         print("\n==== RESULTADO ====")
         print(json.dumps(res, ensure_ascii=False, indent=2, default=str))
