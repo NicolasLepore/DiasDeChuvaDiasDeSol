@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DCDS.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+82c671d441f45eb3bff431b1be670f01ff001916")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a593f6f46f782156ebb2093774cc98da673e4457")]
 [assembly: System.Reflection.AssemblyProductAttribute("DCDS.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DCDS.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

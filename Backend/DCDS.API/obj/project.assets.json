@@ -1667,7 +1667,8 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "DCDS.Domain": "1.0.0"
+          "DCDS.Domain": "1.0.0",
+          "Microsoft.AspNetCore.Identity": "2.3.1"
         },
         "compile": {
           "bin/placeholder/DCDS.Application.dll": {}

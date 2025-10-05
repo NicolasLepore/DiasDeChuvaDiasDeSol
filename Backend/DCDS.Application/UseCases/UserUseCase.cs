@@ -1,6 +1,7 @@
 ﻿using DCDS.Application.Dtos.Requests;
 using DCDS.Application.Dtos.Responses;
 using DCDS.Application.Interfaces;
+using DCDS.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,23 +21,38 @@ namespace DCDS.Application.UseCases
 
         public async Task<DefaultResponseData> RegisterAsync(CreateUserRequest dto)
         {
-            var success = await _auth.SignUpAsync(dto);
-            
-            if(success)
-            {
-                var response = new DefaultResponseData()
-                {
-                    Success = true,
-                    StatusCode = 200,
-                };
+            var result = await _auth.SignUpAsync(dto);
 
-                return response;
+            if (!result.Succeeded)
+            {
+                var errorsListMessage = "";
+                foreach (var error in result.Errors)
+                {
+                    errorsListMessage += error.Description + "\n";
+                }
+
+                Console.WriteLine("Error list: " + errorsListMessage);
+                throw new AuthException("Failed to register user!", errorsListMessage);
+
             }
 
             return new DefaultResponseData()
             {
                 Success = false,
-                StatusCode = 401
+                StatusCode = 200
+            };
+        }
+
+        public async Task<DefaultResponseData> LoginAsync(SignInUserRequest dto)
+        {
+            var result = await _auth.SignInAsync(dto);
+
+            if(!result.Succeeded) throw new AuthException("Failed to signIn, invalid credentials!");
+
+            return new DefaultResponseData()
+            {
+                Success = false,
+                StatusCode = 200
             };
         }
     }

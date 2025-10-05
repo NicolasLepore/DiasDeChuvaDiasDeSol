@@ -30,30 +30,20 @@ namespace DCDS.Infra.Services
             throw new NotImplementedException();
         }
 
-        public void SignInAsync()
+        public async Task<SignInResult> SignInAsync(SignInUserRequest dto)
         {
-            throw new NotImplementedException();
+            var result = await _signInManager.PasswordSignInAsync(dto.UserName, dto.Password, false, false);
+
+            return result;
         }
 
-        public async Task<bool> SignUpAsync(CreateUserRequest dto)
+        public async Task<IdentityResult> SignUpAsync(CreateUserRequest dto)
         {
             var user = _mapper.Map<User>(dto);
-            Console.WriteLine(user.UserName);
+
             var result = await _userManager.CreateAsync(user, dto.Password!);
 
-            if (!result.Succeeded)
-            {
-                var errorsListMessage = "";
-                foreach (var error in result.Errors)
-                {
-                    errorsListMessage += error.Description + "\n";
-                }
-                Console.WriteLine("LISTA ERROS: " + errorsListMessage);
-                throw new AuthException("Failed to register user!", errorsListMessage);
-
-            }
-
-            return result.Succeeded;
+            return result;
         }
     }
 }

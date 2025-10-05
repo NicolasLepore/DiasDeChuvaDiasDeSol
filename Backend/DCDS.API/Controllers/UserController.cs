@@ -26,19 +26,24 @@ namespace DCDS.API.Controllers
 
             if (!response.Success) return BadRequest("An unexpected error occurred");
 
+            // retornar token
             return Ok("Success in creating the account");
+        }
+
+        [HttpPost("signin")]
+        public async Task<IActionResult> SignInAsync([FromBody] SignInUserRequest request)
+        {
+            var response = await _userUseCase.LoginAsync(request);
+
+            if(!response.Success) return BadRequest("An unexpected error occurred");
+
+            return Ok();
         }
 
         [HttpGet("getusers")]
         public IActionResult GetUsers()
         {
             return Ok(_userRepository.GetAll());
-        }
-
-        [HttpPost("signin")]
-        public async Task<IActionResult> SignInAsync()
-        {
-            return Ok("GET REALIZADO");
         }
     }
 }
