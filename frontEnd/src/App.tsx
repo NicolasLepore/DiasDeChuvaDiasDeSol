@@ -6,6 +6,7 @@ import Cadastro from "./modules/cadastro";
 import Clima from "./modules/Clima";
 import Usuarios from "./modules/usuarios";
 import Calendar from "./modules/calendar";
+import { PrivateRoute } from "./componentes/privateRoute";
 
 function App() {
   return (
@@ -13,12 +14,45 @@ function App() {
       <BrowserRouter>
         <Layout>
           <Routes>
-            <Route element={<Home />} path={"/"} />
-            <Route element={<Calendar />} path={"/calendar"} />
             <Route element={<Login />} path={"/login"} />
-            <Route element={<Cadastro />} path={"/cadastro"} />
-            <Route element={<Clima />} path={"/clima"} />
-            <Route element={<Usuarios />} path={"/usuarios"} />
+
+            <Route element={<Home />} path={"/"} />
+
+            <Route
+              element={
+                <PrivateRoute>
+                  <Calendar />
+                </PrivateRoute>
+              }
+              path={"/calendar"}
+            />
+
+            <Route
+              element={
+                
+                  <Cadastro />
+                
+              }
+              path={"/cadastro"}
+            />
+
+            <Route
+              element={
+                <PrivateRoute>
+                  <Clima />
+                </PrivateRoute>
+              }
+              path={"/clima"}
+            />
+
+            <Route
+              element={
+                
+                  <Usuarios />
+                
+              }
+              path={"/usuarios"}
+            />
           </Routes>
         </Layout>
       </BrowserRouter>

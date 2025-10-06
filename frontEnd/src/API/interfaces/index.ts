@@ -5,3 +5,4 @@ export interface Person {
   password: string
   rePassword: string
 }
+

@@ -2,26 +2,54 @@ import { GoLock } from "react-icons/go";
 import { IoPerson } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { Formik, Form, Field } from "formik";
+import axios from "axios";
+import { useAuth } from "../private";
+
 
 const Login = () => {
   const navigate = useNavigate();
+  const { loginUser } = useAuth();
 
   const handleCadastro = () => {
     navigate("/cadastro");
+  };
+
+  const handleLogin = async (values: { user: string; password: string }) => {
+    try {
+      const payload = {
+        username: values.user,
+        password: values.password,
+      };
+
+      const response = await axios.post(
+        "http://localhost:5000/api/v1/auth/signin",
+        payload
+      );
+
+      const { token, user } = response.data;
+
+      if (token) {
+        loginUser(token, user); // Salva token e dados do usuário
+        navigate("/"); // Redireciona para Home ou página desejada
+      } else {
+        alert("Erro: token não recebido do backend");
+      }
+    } catch (error: any) {
+      if (error.response) {
+        // Mensagem do backend
+        alert(error.response.data?.title || error.response.data?.message || "Erro no login");
+      } else {
+        alert("Erro de rede ou servidor");
+      }
+    }
   };
 
   return (
     <div className="flex w-full min-h-screen items-center justify-center bg-gradient-to-t from-[#AED9FF] via-[#CFF3F8] to-[#DDEBFF] p-5">
       <div className="bg-white w-full max-w-md rounded-xl shadow-lg border border-gray-300 p-8">
         <Formik
-          initialValues={{
-            user: "",
-            password: "",
-          }}
-          onSubmit={(values) => {
-            // 👉 Você adiciona sua lógica de submit aqui
-            console.log(values);
-          }}
+          initialValues={{ user: "", password: "" }}
+          onSubmit={handleLogin}
         >
           {() => (
             <Form className="flex flex-col gap-6">
