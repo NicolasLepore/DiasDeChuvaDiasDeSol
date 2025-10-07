@@ -1,5 +1,47 @@
 [
   {
+    "ContainingType": "DCDS.API.Controllers.UserController",
+    "Method": "GetUsers",
+    "RelativePath": "api/v1/auth/getusers",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DCDS.API.Controllers.UserController",
+    "Method": "SignInAsync",
+    "RelativePath": "api/v1/auth/signin",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "DCDS.Application.Dtos.Requests.SignInUserRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DCDS.API.Controllers.UserController",
+    "Method": "SignUpAsync",
+    "RelativePath": "api/v1/auth/signup",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "DCDS.Application.Dtos.Requests.CreateUserRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "DCDS.API.Controllers.TestController",
     "Method": "GetTest",
     "RelativePath": "api/v1/test",

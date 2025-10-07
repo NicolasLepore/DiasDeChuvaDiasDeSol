@@ -1,7 +1,60 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|solutionrelative:dcds.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.application\\dtos\\requests\\signinuserrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|solutionrelative:dcds.application\\dtos\\requests\\signinuserrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.application\\dtos\\requests\\createuserrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|solutionrelative:dcds.application\\dtos\\requests\\createuserrequest.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{730B6B79-34D8-4720-920D-ABEAF69F5091}|DCDS.Infra\\DCDS.Infra.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.infra\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{730B6B79-34D8-4720-920D-ABEAF69F5091}|DCDS.Infra\\DCDS.Infra.csproj|solutionrelative:dcds.infra\\services\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.application\\dtos\\userdetail.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|solutionrelative:dcds.application\\dtos\\userdetail.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{730B6B79-34D8-4720-920D-ABEAF69F5091}|DCDS.Infra\\DCDS.Infra.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.infra\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{730B6B79-34D8-4720-920D-ABEAF69F5091}|DCDS.Infra\\DCDS.Infra.csproj|solutionrelative:dcds.infra\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{730B6B79-34D8-4720-920D-ABEAF69F5091}|DCDS.Infra\\DCDS.Infra.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.infra\\services\\tokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{730B6B79-34D8-4720-920D-ABEAF69F5091}|DCDS.Infra\\DCDS.Infra.csproj|solutionrelative:dcds.infra\\services\\tokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.api\\controllers\\testcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|solutionrelative:dcds.api\\controllers\\testcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|solutionrelative:dcds.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.api\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{6BE63675-A9D7-4661-983B-928CCBF75305}|DCDS.API\\DCDS.API.csproj|solutionrelative:dcds.api\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.application\\usecases\\userusecase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|solutionrelative:dcds.application\\usecases\\userusecase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.application\\dtos\\responses\\defaultresponsedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|solutionrelative:dcds.application\\dtos\\responses\\defaultresponsedata.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|c:\\users\\nigam\\source\\repos\\dcds\\backend\\dcds.application\\interfaces\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B762DCA4-0AA5-4B38-9B2A-D64E2386251A}|DCDS.Application\\DCDS.Application.csproj|solutionrelative:dcds.application\\interfaces\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,7 +62,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -22,6 +75,164 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\appsettings.json",
+              "RelativeDocumentMoniker": "DCDS.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\appsettings.json",
+              "RelativeToolTip": "DCDS.API\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-10-05T17:57:01.53Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SignInUserRequest.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\Requests\\SignInUserRequest.cs",
+              "RelativeDocumentMoniker": "DCDS.Application\\Dtos\\Requests\\SignInUserRequest.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\Requests\\SignInUserRequest.cs",
+              "RelativeToolTip": "DCDS.Application\\Dtos\\Requests\\SignInUserRequest.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T17:48:07.61Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CreateUserRequest.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\Requests\\CreateUserRequest.cs",
+              "RelativeDocumentMoniker": "DCDS.Application\\Dtos\\Requests\\CreateUserRequest.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\Requests\\CreateUserRequest.cs",
+              "RelativeToolTip": "DCDS.Application\\Dtos\\Requests\\CreateUserRequest.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAgwBcAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T17:48:01.791Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Infra\\Models\\User.cs",
+              "RelativeDocumentMoniker": "DCDS.Infra\\Models\\User.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Infra\\Models\\User.cs",
+              "RelativeToolTip": "DCDS.Infra\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T17:45:13.848Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "UserDetail.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\UserDetail.cs",
+              "RelativeDocumentMoniker": "DCDS.Application\\Dtos\\UserDetail.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\UserDetail.cs",
+              "RelativeToolTip": "DCDS.Application\\Dtos\\UserDetail.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T17:44:38.598Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "TestController.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\Controllers\\TestController.cs",
+              "RelativeDocumentMoniker": "DCDS.API\\Controllers\\TestController.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\Controllers\\TestController.cs",
+              "RelativeToolTip": "DCDS.API\\Controllers\\TestController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T15:48:38.733Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "TokenService.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Infra\\Services\\TokenService.cs",
+              "RelativeDocumentMoniker": "DCDS.Infra\\Services\\TokenService.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Infra\\Services\\TokenService.cs",
+              "RelativeToolTip": "DCDS.Infra\\Services\\TokenService.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAgwBAAAAA5AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T15:35:04.87Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "DefaultResponseData.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\Responses\\DefaultResponseData.cs",
+              "RelativeDocumentMoniker": "DCDS.Application\\Dtos\\Responses\\DefaultResponseData.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Dtos\\Responses\\DefaultResponseData.cs",
+              "RelativeToolTip": "DCDS.Application\\Dtos\\Responses\\DefaultResponseData.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T15:27:37.843Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Interfaces\\IAuthService.cs",
+              "RelativeDocumentMoniker": "DCDS.Application\\Interfaces\\IAuthService.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\Interfaces\\IAuthService.cs",
+              "RelativeToolTip": "DCDS.Application\\Interfaces\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T15:27:14.648Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Infra\\Services\\AuthService.cs",
+              "RelativeDocumentMoniker": "DCDS.Infra\\Services\\AuthService.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Infra\\Services\\AuthService.cs",
+              "RelativeToolTip": "DCDS.Infra\\Services\\AuthService.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAiwDIAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-04T17:09:35.625Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "UserUseCase.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\UseCases\\UserUseCase.cs",
+              "RelativeDocumentMoniker": "DCDS.Application\\UseCases\\UserUseCase.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.Application\\UseCases\\UserUseCase.cs",
+              "RelativeToolTip": "DCDS.Application\\UseCases\\UserUseCase.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAADgvysAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-05T15:37:52.788Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\Program.cs",
+              "RelativeDocumentMoniker": "DCDS.API\\Program.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\Program.cs",
+              "RelativeToolTip": "DCDS.API\\Program.cs",
+              "ViewState": "AgIAAEoAAAAAAAAAAADwv1QAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-04T20:44:09.125Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "UserController.cs",
+              "DocumentMoniker": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\Controllers\\UserController.cs",
+              "RelativeDocumentMoniker": "DCDS.API\\Controllers\\UserController.cs",
+              "ToolTip": "C:\\Users\\nigam\\source\\repos\\DCDS\\Backend\\DCDS.API\\Controllers\\UserController.cs",
+              "RelativeToolTip": "DCDS.API\\Controllers\\UserController.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAA2wCMAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-04T16:33:07.562Z"
             }
           ]
         }
